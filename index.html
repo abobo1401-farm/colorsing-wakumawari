@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>カラーシング枠周り管理</title>
+<style>
+:root{
+  --bg:#fff7fb;--card:#ffffff;--main:#ff6fae;--main2:#ff9cc8;--accent:#7c4dff;--text:#3b2d34;--muted:#8b7b83;--line:#f1d5e2;--ok:#13a76b;--ng:#999;--warn:#ffb300;
+  --shadow:0 8px 24px rgba(255,111,174,.16);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",Meiryo,sans-serif;}
+body{padding-bottom:92px;}
+header{position:sticky;top:0;z-index:5;background:linear-gradient(135deg,var(--main),var(--main2));color:#fff;padding:18px 16px 14px;border-bottom-left-radius:22px;border-bottom-right-radius:22px;box-shadow:var(--shadow)}
+header h1{font-size:20px;margin:0 0 4px;font-weight:800;letter-spacing:.02em} header p{margin:0;font-size:12px;opacity:.94}
+main{padding:14px;max-width:720px;margin:auto}.screen{display:none}.screen.active{display:block}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin:12px 0;box-shadow:var(--shadow)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:linear-gradient(180deg,#fff,#fff6fa);border:1px solid var(--line);border-radius:16px;padding:13px;text-align:center}.stat b{display:block;font-size:24px;color:var(--main);line-height:1}.stat span{font-size:12px;color:var(--muted)}
+h2{font-size:18px;margin:4px 0 10px}.label{display:block;font-size:13px;font-weight:700;margin:12px 0 6px}.hint{font-size:12px;color:var(--muted);line-height:1.55}.small{font-size:12px;color:var(--muted)}
+input,select,textarea{width:100%;font-size:16px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff;color:var(--text);outline:none}textarea{min-height:90px;resize:vertical}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+button{border:0;border-radius:14px;padding:12px 14px;font-size:15px;font-weight:800;background:var(--main);color:#fff;box-shadow:0 4px 12px rgba(255,111,174,.2)}button.secondary{background:#fff;color:var(--main);border:1px solid var(--main);box-shadow:none}button.gray{background:#f4eef2;color:var(--text);box-shadow:none}button.danger{background:#ff4f67}.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}.seg button{background:#f4eef2;color:var(--muted);box-shadow:none}.seg button.active{background:var(--main);color:#fff}.chips{display:flex;gap:8px;overflow:auto;padding:4px 0}.chip{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 12px;font-size:13px;color:var(--text)}
+.creator-card{border:1px solid var(--line);border-radius:18px;background:#fff;margin:10px 0;padding:14px}.creator-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.creator-name{font-size:18px;font-weight:900}.badge{border-radius:999px;padding:5px 9px;font-size:12px;font-weight:800;background:#fff0f7;color:var(--main)}.periods{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px}.period{background:#fff7fb;border:1px solid var(--line);border-radius:13px;padding:8px 4px;text-align:center}.period b{display:block;font-size:19px;color:var(--main)}.period span{font-size:11px;color:var(--muted)}
+.history-item{border-left:5px solid var(--line);background:#fff;border-radius:14px;padding:11px;margin:9px 0;border-top:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}.history-item.yes{border-left-color:var(--ok)}.history-item.no{border-left-color:var(--ng)}.history-head{display:flex;justify-content:space-between;gap:8px;font-weight:800}.memo{white-space:pre-wrap;line-height:1.5;margin-top:6px;color:#51434a}.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.dow{text-align:center;font-size:11px;color:var(--muted);font-weight:800}.day{min-height:56px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:5px;font-size:11px}.day .num{font-weight:900}.dot{display:inline-block;margin-top:3px;background:var(--main);color:#fff;border-radius:999px;padding:1px 5px;font-size:10px}.empty{opacity:.35}.bottom-tabs{position:fixed;bottom:0;left:0;right:0;z-index:10;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:8px 6px max(8px,env(safe-area-inset-bottom));}.tab{background:transparent;color:var(--muted);box-shadow:none;border-radius:12px;padding:7px 2px;font-size:11px}.tab.active{background:#fff0f7;color:var(--main)}.tab span{display:block;font-size:20px;line-height:1}.toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar button{flex:1;min-width:120px}.toast{position:fixed;left:16px;right:16px;bottom:92px;background:#342630;color:#fff;border-radius:14px;padding:12px;text-align:center;z-index:30;display:none}.modal{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:20;display:none;align-items:flex-end}.modal-inner{background:#fff;border-top-left-radius:22px;border-top-right-radius:22px;padding:16px;max-height:80vh;overflow:auto;width:100%}.search{margin:8px 0 4px}.footer-note{text-align:center;margin:18px 0;color:var(--muted);font-size:12px}.file-input{font-size:14px;padding:10px}
+@media(min-width:700px){.bottom-tabs{max-width:720px;left:50%;transform:translateX(-50%);border-radius:22px 22px 0 0}.modal{align-items:center;justify-content:center}.modal-inner{max-width:520px;border-radius:22px}}
+</style>
+</head>
+<body>
+<header><h1>カラーシング枠周り管理✍️</h1><p>出席YESだけを自動集計。データはこの端末内に保存されます。</p></header>
+<main>
+<section id="home" class="screen active">
+  <div class="grid">
+    <div class="stat"><b id="statCreators">0</b><span>登録配信者</span></div>
+    <div class="stat"><b id="statRecords">0</b><span>今月の記録</span></div>
+    <div class="stat"><b id="statYes">0</b><span>今月の出席YES</span></div>
+    <div class="stat"><b id="statDone">0</b><span>5回達成者</span></div>
+  </div>
+  <div class="card"><h2>最近の記録</h2><div id="recentList" class="small">まだ記録がありません。</div></div>
+  <div class="card"><h2>使い方</h2><p class="hint">①記録追加で日付・配信者・出席YES/NO・印象を入力。<br>②配信者一覧で上旬・中旬・下旬・合計を確認。<br>③バックアップからJSON保存してiCloud Driveなどに保管。</p></div>
+</section>
+<section id="add" class="screen">
+  <div class="card"><h2 id="formTitle">記録追加</h2>
+    <label class="label">日付</label><input id="dateInput" type="date">
+    <label class="label">配信者名</label>
+    <select id="creatorSelect"><option value="">配信者を選択</option></select>
+    <div class="row" style="margin-top:8px"><input id="newCreatorInput" placeholder="新規配信者名を入力"><button type="button" class="secondary" onclick="addCreatorFromInput()">追加</button></div>
+    <div class="chips" id="creatorChips"></div>
+    <label class="label">出席（スーパーいいね5回）</label>
+    <div class="seg"><button id="yesBtn" type="button" class="active" onclick="setAttend('YES')">YES</button><button id="noBtn" type="button" onclick="setAttend('NO')">NO</button></div>
+    <label class="label">配信内容や印象</label><textarea id="memoInput" placeholder="歌枠、雑談、印象、次回話したいことなど"></textarea>
+    <div class="toolbar" style="margin-top:12px"><button onclick="saveRecord()" id="saveBtn">保存する</button><button class="gray" onclick="resetForm()">入力クリア</button></div>
+  </div>
+</section>
+<section id="creators" class="screen">
+  <div class="card"><h2>配信者一覧</h2><input class="search" id="creatorSearch" placeholder="配信者名で検索" oninput="renderAll()"><p class="hint">今月のYESのみ集計。NOは履歴には残りますが回数には入りません。</p></div>
+  <div id="creatorList"></div>
+</section>
+<section id="calendar" class="screen">
+  <div class="card"><h2>カレンダー</h2><div class="row"><button class="secondary" onclick="changeMonth(-1)">前月</button><input id="monthInput" type="month" onchange="renderAll()"><button class="secondary" onclick="changeMonth(1)">翌月</button></div></div>
+  <div class="card"><div class="calendar" id="calendarGrid"></div></div>
+  <div class="card"><h2>選択月の履歴</h2><div id="monthHistory"></div></div>
+</section>
+<section id="backup" class="screen">
+  <div class="card"><h2>バックアップ</h2><p class="hint">普段は自動保存。機種変更やデータ消失対策として、月末などにJSONバックアップを保存してください。</p><p class="small">最終保存：<span id="lastSaved">-</span><br>最終バックアップ：<span id="lastBackup">-</span></p>
+    <div class="toolbar"><button onclick="downloadBackup()">📤 JSON保存</button><button class="secondary" onclick="document.getElementById('restoreFile').click()">📥 JSON復元</button></div>
+    <input id="restoreFile" class="file-input" type="file" accept="application/json,.json" style="display:none" onchange="restoreBackup(event)">
+  </div>
+  <div class="card"><h2>配布するときの注意</h2><p class="hint">このHTMLをGitHub Pagesで公開しても、入力データは見た人それぞれの端末に保存されます。ABOさんの記録が他の人に見えることはありません。</p></div>
+  <div class="card"><h2>危険操作</h2><button class="danger" onclick="clearAllData()">全データ削除</button></div>
+</section>
+</main>
+<div class="bottom-tabs">
+  <button class="tab active" onclick="showScreen('home',this)"><span>📊</span>ホーム</button>
+  <button class="tab" onclick="showScreen('add',this)"><span>📝</span>記録</button>
+  <button class="tab" onclick="showScreen('creators',this)"><span>👤</span>配信者</button>
+  <button class="tab" onclick="showScreen('calendar',this)"><span>📅</span>カレンダー</button>
+  <button class="tab" onclick="showScreen('backup',this)"><span>💾</span>保存</button>
+</div>
+<div id="toast" class="toast"></div>
+<div id="detailModal" class="modal" onclick="if(event.target.id==='detailModal')closeModal()"><div class="modal-inner"><div id="modalContent"></div><button class="gray" style="width:100%;margin-top:12px" onclick="closeModal()">閉じる</button></div></div>
+<script>
+const KEY='colorsing_wakumawari_v1';
+let state={creators:[],records:[],lastSaved:null,lastBackup:null};
+let attend='YES'; let editId=null; let currentMonth='';
+function pad(n){return String(n).padStart(2,'0')} function today(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`} function ym(d){return d.slice(0,7)} function fmt(dt){if(!dt)return '-'; const d=new Date(dt); return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`}
+function period(date){const day=Number(date.slice(8,10)); if(day<=10)return '上旬'; if(day<=20)return '中旬'; return '下旬'}
+function load(){try{const raw=localStorage.getItem(KEY); if(raw) state={...state,...JSON.parse(raw)};}catch(e){alert('保存データの読み込みに失敗しました。バックアップから復元してください。')} if(!currentMonth)currentMonth=ym(today()); document.getElementById('dateInput').value=today(); document.getElementById('monthInput').value=currentMonth; renderAll();}
+function persist(){state.lastSaved=new Date().toISOString(); localStorage.setItem(KEY,JSON.stringify(state)); renderAll();}
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',1800)}
+function showScreen(id,btn){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');renderAll();}
+function setAttend(v){attend=v;document.getElementById('yesBtn').classList.toggle('active',v==='YES');document.getElementById('noBtn').classList.toggle('active',v==='NO');}
+function addCreator(name){name=(name||'').trim(); if(!name)return ''; const exists=state.creators.find(c=>c===name); if(!exists){state.creators.push(name); state.creators.sort((a,b)=>a.localeCompare(b,'ja')); persist();} return name;}
+function addCreatorFromInput(){const name=addCreator(document.getElementById('newCreatorInput').value); if(name){document.getElementById('creatorSelect').value=name; document.getElementById('newCreatorInput').value=''; toast('配信者を追加しました');}}
+function saveRecord(){const date=document.getElementById('dateInput').value; let creator=document.getElementById('creatorSelect').value || document.getElementById('newCreatorInput').value.trim(); const memo=document.getElementById('memoInput').value.trim(); if(!date){alert('日付を選んでください');return} if(!creator){alert('配信者名を選択または入力してください');return} creator=addCreator(creator); if(editId){const r=state.records.find(x=>x.id===editId); if(r){r.date=date;r.creator=creator;r.attend=attend;r.memo=memo;r.updatedAt=new Date().toISOString();}} else {state.records.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),date,creator,attend,memo,createdAt:new Date().toISOString()});}
+ persist(); resetForm(); toast(editId?'修正しました':'保存しました');}
+function resetForm(){editId=null;document.getElementById('formTitle').textContent='記録追加';document.getElementById('saveBtn').textContent='保存する';document.getElementById('dateInput').value=today();document.getElementById('creatorSelect').value='';document.getElementById('newCreatorInput').value='';document.getElementById('memoInput').value='';setAttend('YES');}
+function editRecord(id){const r=state.records.find(x=>x.id===id); if(!r)return; editId=id;document.getElementById('dateInput').value=r.date;document.getElementById('creatorSelect').value=r.creator;document.getElementById('memoInput').value=r.memo||'';setAttend(r.attend);document.getElementById('formTitle').textContent='記録修正';document.getElementById('saveBtn').textContent='修正保存';showScreen('add',document.querySelectorAll('.tab')[1]);closeModal();}
+function deleteRecord(id){if(!confirm('この記録を削除しますか？'))return; state.records=state.records.filter(r=>r.id!==id); persist(); toast('削除しました'); closeModal();}
+function monthRecords(){return state.records.filter(r=>ym(r.date)===currentMonth).sort((a,b)=>b.date.localeCompare(a.date));}
+function summaryByCreator(){const s={}; monthRecords().forEach(r=>{if(!s[r.creator])s[r.creator]={name:r.creator,early:0,mid:0,late:0,total:0,last:'',records:[]}; s[r.creator].records.push(r); if(!s[r.creator].last||r.date>s[r.creator].last)s[r.creator].last=r.date; if(r.attend==='YES'){const p=period(r.date); if(p==='上旬')s[r.creator].early++; if(p==='中旬')s[r.creator].mid++; if(p==='下旬')s[r.creator].late++; s[r.creator].total++;}}); return Object.values(s).sort((a,b)=>b.total-a.total || b.last.localeCompare(a.last) || a.name.localeCompare(b.name,'ja'));}
+function renderAll(){renderSelect();renderHome();renderCreators();renderCalendar();renderBackup();}
+function renderSelect(){const sel=document.getElementById('creatorSelect'); const cur=sel.value; sel.innerHTML='<option value="">配信者を選択</option>'+state.creators.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join(''); sel.value=cur; document.getElementById('creatorChips').innerHTML=state.creators.slice(0,12).map(n=>`<button type="button" class="chip" onclick="document.getElementById('creatorSelect').value='${js(n)}'">${esc(n)}</button>`).join('');}
+function renderHome(){document.getElementById('statCreators').textContent=state.creators.length;document.getElementById('statRecords').textContent=monthRecords().length;document.getElementById('statYes').textContent=monthRecords().filter(r=>r.attend==='YES').length;document.getElementById('statDone').textContent=summaryByCreator().filter(x=>x.total>=5).length; const recent=state.records.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5); document.getElementById('recentList').innerHTML=recent.length?recent.map(r=>historyHtml(r,false)).join(''):'まだ記録がありません。';}
+function renderCreators(){const q=(document.getElementById('creatorSearch')?.value||'').trim(); const list=summaryByCreator().filter(x=>!q||x.name.includes(q)); document.getElementById('creatorList').innerHTML=list.length?list.map(x=>`<div class="creator-card" onclick="openDetail('${js(x.name)}')"><div class="creator-top"><div><div class="creator-name">${esc(x.name)}</div><div class="small">最終訪問：${esc(x.last||'-')}</div></div><div class="badge">${x.total>=5?'達成':'あと'+Math.max(0,5-x.total)}</div></div><div class="periods"><div class="period"><b>${x.early}</b><span>上旬</span></div><div class="period"><b>${x.mid}</b><span>中旬</span></div><div class="period"><b>${x.late}</b><span>下旬</span></div><div class="period"><b>${x.total}</b><span>合計</span></div></div></div>`).join(''):'この月の記録がありません。';}
+function renderCalendar(){const inp=document.getElementById('monthInput'); if(inp&&inp.value!==currentMonth) currentMonth=inp.value||ym(today()); const [y,m]=currentMonth.split('-').map(Number); const first=new Date(y,m-1,1); const last=new Date(y,m,0); const start=first.getDay(); let html=['日','月','火','水','木','金','土'].map(d=>`<div class="dow">${d}</div>`).join(''); for(let i=0;i<start;i++)html+='<div class="day empty"></div>'; for(let d=1;d<=last.getDate();d++){const date=`${y}-${pad(m)}-${pad(d)}`; const rs=state.records.filter(r=>r.date===date); html+=`<div class="day" onclick="openDate('${date}')"><div class="num">${d}</div>${rs.length?`<span class="dot">${rs.length}件</span>`:''}</div>`;} document.getElementById('calendarGrid').innerHTML=html; document.getElementById('monthHistory').innerHTML=monthRecords().length?monthRecords().map(r=>historyHtml(r,true)).join(''):'この月の履歴はありません。';}
+function renderBackup(){document.getElementById('lastSaved').textContent=fmt(state.lastSaved);document.getElementById('lastBackup').textContent=fmt(state.lastBackup);}
+function historyHtml(r,buttons){return `<div class="history-item ${r.attend==='YES'?'yes':'no'}"><div class="history-head"><span>${esc(r.date)} ${esc(r.creator)}</span><span>${r.attend==='YES'?'✅YES':'—NO'}</span></div><div class="small">${period(r.date)}</div>${r.memo?`<div class="memo">${esc(r.memo)}</div>`:''}${buttons?`<div class="toolbar" style="margin-top:8px"><button class="secondary" onclick="editRecord('${r.id}')">修正</button><button class="gray" onclick="deleteRecord('${r.id}')">削除</button></div>`:''}</div>`}
+function openDetail(name){const sum=summaryByCreator().find(x=>x.name===name); if(!sum)return; const records=sum.records.slice().sort((a,b)=>b.date.localeCompare(a.date)); document.getElementById('modalContent').innerHTML=`<h2>${esc(name)}</h2><div class="periods"><div class="period"><b>${sum.early}</b><span>上旬</span></div><div class="period"><b>${sum.mid}</b><span>中旬</span></div><div class="period"><b>${sum.late}</b><span>下旬</span></div><div class="period"><b>${sum.total}</b><span>合計</span></div></div><h2 style="margin-top:16px">履歴</h2>${records.map(r=>historyHtml(r,true)).join('')}`; document.getElementById('detailModal').style.display='flex';}
+function openDate(date){const rs=state.records.filter(r=>r.date===date); if(!rs.length){toast('この日の記録はありません');return} document.getElementById('modalContent').innerHTML=`<h2>${esc(date)} の記録</h2>${rs.map(r=>historyHtml(r,true)).join('')}`; document.getElementById('detailModal').style.display='flex';}
+function closeModal(){document.getElementById('detailModal').style.display='none'}
+function changeMonth(diff){const [y,m]=currentMonth.split('-').map(Number); const d=new Date(y,m-1+diff,1); currentMonth=`${d.getFullYear()}-${pad(d.getMonth()+1)}`; document.getElementById('monthInput').value=currentMonth; renderAll();}
+function downloadBackup(){state.lastBackup=new Date().toISOString(); persist(); const data={app:'colorsing-wakumawari',version:1,exportedAt:new Date().toISOString(),state}; const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`wakumawari_backup_${today()}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href); toast('バックアップを作成しました');}
+function restoreBackup(ev){const file=ev.target.files[0]; if(!file)return; const reader=new FileReader(); reader.onload=()=>{try{const data=JSON.parse(reader.result); const s=data.state||data; if(!Array.isArray(s.records)||!Array.isArray(s.creators))throw new Error('形式が違います'); if(!confirm('バックアップを復元します。現在のデータは上書きされます。よろしいですか？'))return; state={creators:s.creators||[],records:s.records||[],lastSaved:new Date().toISOString(),lastBackup:s.lastBackup||null}; localStorage.setItem(KEY,JSON.stringify(state)); renderAll(); toast('復元しました');}catch(e){alert('復元できませんでした。JSONファイルを確認してください。')} ev.target.value='';}; reader.readAsText(file);}
+function clearAllData(){if(!confirm('全データを削除します。バックアップがないと戻せません。'))return; if(!confirm('本当に削除しますか？'))return; state={creators:[],records:[],lastSaved:null,lastBackup:null}; localStorage.removeItem(KEY); resetForm(); renderAll(); toast('全データを削除しました');}
+function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))} function js(s){return String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n')}
+load();
+</script>
+</body>
+</html>
