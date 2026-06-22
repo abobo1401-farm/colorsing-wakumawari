@@ -70,13 +70,6 @@ button{border:0;border-radius:14px;padding:12px 14px;font-size:15px;font-weight:
   <div class="card"><h2>配布するときの注意</h2><p class="hint">このアプリのデータは各端末内に保存されます。<br>他の利用者とデータが共有されることはありません。<br>機種変更や端末故障に備え、定期的なJSONバックアップをおすすめします。</p></div>
   <div class="card"><h2>危険操作</h2><button class="danger" onclick="clearAllData()">全データ削除</button></div>
 </section>
-
-<div class="footer-note">
-ColorSing 枠周り管理 Ver1.4.1<br>
-個人利用のみ可 / 商用利用・改造・再配布禁止<br>
-© 2026 ABO All Rights Reserved.
-</div>
-
 </main>
 <div class="bottom-tabs">
   <button class="tab active" onclick="showScreen('home',this)"><span>📊</span>ホーム</button>
@@ -112,7 +105,7 @@ function monthRecords(){return state.records.filter(r=>ym(r.date)===currentMonth
 function summaryByCreator(){const s={}; monthRecords().forEach(r=>{if(!s[r.creator])s[r.creator]={name:r.creator,early:0,mid:0,late:0,total:0,last:'',records:[]}; s[r.creator].records.push(r); if(!s[r.creator].last||r.date>s[r.creator].last)s[r.creator].last=r.date; if(isAttend(r.attend)){const p=period(r.date); if(p==='上旬')s[r.creator].early++; if(p==='中旬')s[r.creator].mid++; if(p==='下旬')s[r.creator].late++; s[r.creator].total++;}}); return Object.values(s).sort((a,b)=>b.total-a.total || b.last.localeCompare(a.last) || a.name.localeCompare(b.name,'ja'));}
 function renderAll(){renderSelect();renderHome();renderCreators();renderCalendar();renderBackup();}
 function renderSelect(){const sel=document.getElementById('creatorSelect'); const cur=sel.value; sel.innerHTML='<option value="">配信者を選択</option>'+state.creators.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join(''); sel.value=cur; document.getElementById('creatorChips').innerHTML=state.creators.slice(0,12).map(n=>`<button type="button" class="chip" onclick="document.getElementById('creatorSelect').value='${js(n)}'">${esc(n)}</button>`).join('');}
-function renderHome(){document.getElementById('statCreators').textContent=state.creators.length;document.getElementById('statRecords').textContent=monthRecords().length;const recent=state.records.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5); document.getElementById('recentList').innerHTML=recent.length?recent.map(r=>historyHtml(r,false,true)).join(''):'まだ記録がありません。';}
+function renderHome(){document.getElementById('statCreators').textContent=state.creators.length;document.getElementById('statRecords').textContent=monthRecords().length;const recent=state.records.slice().sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0)).slice(0,5); document.getElementById('recentList').innerHTML=recent.length?recent.map(r=>historyHtml(r,false,true)).join(''):'まだ記録がありません。';}
 function renderCreators(){const q=(document.getElementById('creatorSearch')?.value||'').trim(); const list=summaryByCreator().filter(x=>!q||x.name.includes(q)); document.getElementById('creatorList').innerHTML=list.length?list.map(x=>`<div class="creator-card" onclick="openDetail('${js(x.name)}')"><div class="creator-top"><div><div class="creator-name">${esc(x.name)}</div><div class="small">最終訪問：${esc(x.last||'-')}</div></div></div><div class="periods"><div class="period"><b>${x.early}</b><span>上旬</span></div><div class="period"><b>${x.mid}</b><span>中旬</span></div><div class="period"><b>${x.late}</b><span>下旬</span></div><div class="period"><b>${x.total}</b><span>合計</span></div></div></div>`).join(''):'この月の記録がありません。';}
 function renderCalendar(){const inp=document.getElementById('monthInput'); if(inp&&inp.value!==currentMonth) currentMonth=inp.value||ym(today()); const [y,m]=currentMonth.split('-').map(Number); const first=new Date(y,m-1,1); const last=new Date(y,m,0); const start=first.getDay(); let html=['日','月','火','水','木','金','土'].map(d=>`<div class="dow">${d}</div>`).join(''); for(let i=0;i<start;i++)html+='<div class="day empty"></div>'; for(let d=1;d<=last.getDate();d++){const date=`${y}-${pad(m)}-${pad(d)}`; const rs=state.records.filter(r=>r.date===date); html+=`<div class="day" onclick="openDate('${date}')"><div class="num">${d}</div>${rs.length?`<span class="dot">${rs.length}件</span>`:''}</div>`;} document.getElementById('calendarGrid').innerHTML=html; document.getElementById('monthHistory').innerHTML=monthRecords().length?monthRecords().map(r=>historyHtml(r,true)).join(''):'この月の履歴はありません。';}
 function renderBackup(){document.getElementById('lastSaved').textContent=fmt(state.lastSaved);document.getElementById('lastBackup').textContent=fmt(state.lastBackup);}
