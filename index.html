@@ -48,11 +48,16 @@ button{border:0;border-radius:14px;padding:12px 14px;font-size:15px;font-weight:
   <div class="card"><h2 id="formTitle">記録追加</h2>
     <label class="label">日付</label><input id="dateInput" type="date">
     <label class="label">配信者名</label>
-    <select id="creatorSelect"><option value="">配信者を選択</option></select>
+    <select id="creatorSelect" onchange="syncSongOshiCheckbox()"><option value="">配信者を選択</option></select>
     <div class="row" style="margin-top:8px"><input id="newCreatorInput" placeholder="新規配信者名を入力"><button type="button" class="secondary" onclick="addCreatorFromInput()">追加</button></div>
     <div class="chips" id="creatorChips"></div>
     <label class="label">出席（スーパーいいね5回）</label>
     <div class="seg"><button id="yesBtn" type="button" onclick="setAttend('YES')">YES</button><button id="noBtn" type="button" onclick="setAttend('NO')">NO</button></div>
+    <label class="label" style="display:flex;align-items:center;gap:8px;margin-top:12px">
+      <input id="songOshiCheck" type="checkbox" style="width:auto;transform:scale(1.15)">
+      今月の歌推し♪
+    </label>
+    <p class="hint">チェックすると、この配信者に今月だけ【歌推し♪】マークが付きます。</p>
     <label class="label">配信内容や印象</label><textarea id="memoInput" placeholder="歌枠、雑談、印象、次回話したいことなど"></textarea>
     <div class="toolbar" style="margin-top:12px"><button onclick="saveRecord()" id="saveBtn">保存する</button><button class="gray" onclick="resetForm()">入力クリア</button></div>
   </div>
@@ -81,7 +86,7 @@ button{border:0;border-radius:14px;padding:12px 14px;font-size:15px;font-weight:
   <div class="card"><h2>危険操作</h2><button class="danger" onclick="clearAllData()">全データ削除</button></div>
 </section>
 <div class="footer-note">
-ColorSing 枠周り管理 Ver1.5<br>
+ColorSing 枠周り管理 Ver1.5.1<br>
 個人利用のみ可 / 商用利用・改造・再配布禁止<br>
 © 2026 ABO All Rights Reserved.
 </div>
@@ -114,14 +119,15 @@ function setSongOshiList(list){localStorage.setItem(songKey(),JSON.stringify([..
 function isSongOshi(name){return getSongOshi().includes(name)}
 function toggleSongOshi(name){let list=getSongOshi(); if(list.includes(name)){list=list.filter(n=>n!==name); toast('歌推し♪を外しました');}else{list.push(name); toast('歌推し♪にしました');} setSongOshiList(list); renderAll(); openDetail(name)}
 function setCreatorSort(mode){creatorSort=mode;renderAll()}
-function addRecordForCreator(name){resetForm();document.getElementById('dateInput').value=today();document.getElementById('creatorSelect').value=name;showScreen('add',document.querySelectorAll('.tab')[1]);closeModal();}
+function addRecordForCreator(name){resetForm();document.getElementById('dateInput').value=today();document.getElementById('creatorSelect').value=name;const soc=document.getElementById('songOshiCheck'); if(soc)soc.checked=isSongOshi(name);showScreen('add',document.querySelectorAll('.tab')[1]);closeModal();}
 
 function addCreator(name){name=(name||'').trim(); if(!name)return ''; const exists=state.creators.find(c=>c===name); if(!exists){state.creators.push(name); state.creators.sort((a,b)=>a.localeCompare(b,'ja')); persist();} return name;}
-function addCreatorFromInput(){const name=addCreator(document.getElementById('newCreatorInput').value); if(name){document.getElementById('creatorSelect').value=name; document.getElementById('newCreatorInput').value=''; toast('配信者を追加しました');}}
-function saveRecord(){const date=document.getElementById('dateInput').value; let creator=document.getElementById('creatorSelect').value || document.getElementById('newCreatorInput').value.trim(); const memo=document.getElementById('memoInput').value.trim(); if(!date){alert('日付を選んでください');return} if(!creator){alert('配信者名を選択または入力してください');return} creator=addCreator(creator); const wasEdit=!!editId; if(editId){const r=state.records.find(x=>x.id===editId); if(r){r.date=date;r.creator=creator;r.attend=attend;r.memo=memo;r.updatedAt=new Date().toISOString();}} else {state.records.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),date,creator,attend,memo,createdAt:new Date().toISOString()});}
+function syncSongOshiCheckbox(){const name=document.getElementById('creatorSelect')?.value||document.getElementById('newCreatorInput')?.value.trim(); const soc=document.getElementById('songOshiCheck'); if(soc&&name)soc.checked=isSongOshi(name)}
+function addCreatorFromInput(){const name=addCreator(document.getElementById('newCreatorInput').value); if(name){document.getElementById('creatorSelect').value=name; document.getElementById('newCreatorInput').value=''; syncSongOshiCheckbox(); toast('配信者を追加しました');}}
+function saveRecord(){const date=document.getElementById('dateInput').value; let creator=document.getElementById('creatorSelect').value || document.getElementById('newCreatorInput').value.trim(); const memo=document.getElementById('memoInput').value.trim(); const songChecked=document.getElementById('songOshiCheck')?.checked; if(!date){alert('日付を選んでください');return} if(!creator){alert('配信者名を選択または入力してください');return} creator=addCreator(creator); if(songChecked!==undefined){let list=getSongOshi(); if(songChecked && !list.includes(creator)){list.push(creator); setSongOshiList(list);} if(!songChecked && list.includes(creator)){list=list.filter(n=>n!==creator); setSongOshiList(list);}} const wasEdit=!!editId; if(editId){const r=state.records.find(x=>x.id===editId); if(r){r.date=date;r.creator=creator;r.attend=attend;r.memo=memo;r.updatedAt=new Date().toISOString();}} else {state.records.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),date,creator,attend,memo,createdAt:new Date().toISOString()});}
  persist(); resetForm(); toast(wasEdit?'修正しました':'保存しました'); if(wasEdit){showScreen('home',document.querySelectorAll('.tab')[0]);}}
-function resetForm(){editId=null;document.getElementById('formTitle').textContent='記録追加';document.getElementById('saveBtn').textContent='保存する';document.getElementById('dateInput').value=today();document.getElementById('creatorSelect').value='';document.getElementById('newCreatorInput').value='';document.getElementById('memoInput').value='';setAttend('');}
-function editRecord(id){const r=state.records.find(x=>x.id===id); if(!r)return; editId=id;document.getElementById('dateInput').value=r.date;document.getElementById('creatorSelect').value=r.creator;document.getElementById('memoInput').value=r.memo||'';setAttend(r.attend);document.getElementById('formTitle').textContent='記録修正';document.getElementById('saveBtn').textContent='修正保存';showScreen('add',document.querySelectorAll('.tab')[1]);closeModal();}
+function resetForm(){editId=null;document.getElementById('formTitle').textContent='記録追加';document.getElementById('saveBtn').textContent='保存する';document.getElementById('dateInput').value=today();document.getElementById('creatorSelect').value='';document.getElementById('newCreatorInput').value='';document.getElementById('memoInput').value='';const soc=document.getElementById('songOshiCheck'); if(soc)soc.checked=false;setAttend('');}
+function editRecord(id){const r=state.records.find(x=>x.id===id); if(!r)return; editId=id;document.getElementById('dateInput').value=r.date;document.getElementById('creatorSelect').value=r.creator;document.getElementById('memoInput').value=r.memo||'';setAttend(r.attend);const soc=document.getElementById('songOshiCheck'); if(soc)soc.checked=isSongOshi(r.creator);document.getElementById('formTitle').textContent='記録修正';document.getElementById('saveBtn').textContent='修正保存';showScreen('add',document.querySelectorAll('.tab')[1]);closeModal();}
 function deleteRecord(id){if(!confirm('この記録を削除しますか？'))return; state.records=state.records.filter(r=>r.id!==id); persist(); toast('削除しました'); closeModal();}
 function renameCreator(oldName){const newName=(prompt('新しい配信者名を入力してください',oldName)||'').trim(); if(!newName||newName===oldName)return; const exists=state.creators.includes(newName); if(exists&&!confirm('同じ名前の配信者がいます。記録をまとめてもよろしいですか？'))return; state.records.forEach(r=>{if(r.creator===oldName)r.creator=newName}); state.creators=state.creators.filter(n=>n!==oldName); if(!state.creators.includes(newName))state.creators.push(newName); state.creators.sort((a,b)=>a.localeCompare(b,'ja')); persist(); toast('配信者名を修正しました'); openDetail(newName);}
 function deleteCreator(name){const count=state.records.filter(r=>r.creator===name).length; if(!confirm('配信者「'+name+'」を削除しますか？\n関連する記録 '+count+'件も削除されます。'))return; if(count>0&&!confirm('本当に削除しますか？バックアップがないと戻せません。'))return; state.creators=state.creators.filter(n=>n!==name); state.records=state.records.filter(r=>r.creator!==name); persist(); closeModal(); toast('配信者を削除しました');}
