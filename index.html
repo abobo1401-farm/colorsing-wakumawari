@@ -36,7 +36,7 @@ input,select,textarea{width:100%;font-size:16px;border:1px solid var(--line);bor
 textarea{min-height:90px;resize:vertical}
 .row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
 button{border:0;border-radius:14px;padding:12px 14px;font-size:15px;font-weight:800;background:var(--main);color:#fff;box-shadow:0 4px 12px rgba(255,111,174,.2)}
-button.secondary{background:#fff;color:var(--main);border:1px solid var(--main);box-shadow:none}
+button.secondary{background:#fff;color:var(--main);border:1px solid var(--main);box-shadow:none}button.secondary.active{background:var(--main);color:#fff}
 button.gray{background:#f4eef2;color:var(--text);box-shadow:none}
 button.danger{background:#ff4f67}
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -49,7 +49,7 @@ button.danger{background:#ff4f67}
 .sort-tabs button.active{background:var(--main);color:#fff}
 .creator-card{border:1px solid var(--line);border-radius:18px;background:#fff;margin:10px 0;padding:14px}
 .creator-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
-.creator-name{font-size:18px;font-weight:900}
+.creator-name{font-size:18px;font-weight:900}.favorite-star{display:inline-block;margin-right:6px;font-size:20px;color:var(--main);cursor:pointer;vertical-align:-1px}.favorite-star.off{color:#d6c8cf}
 .badge{border-radius:999px;padding:5px 9px;font-size:12px;font-weight:800;background:#fff0f7;color:var(--main);display:inline-block}
 .periods{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px}
 .period{background:#fff7fb;border:1px solid var(--line);border-radius:13px;padding:8px 4px;text-align:center}
@@ -102,12 +102,16 @@ button.danger{background:#ff4f67}
 <section id="creators" class="screen">
   <div class="card"><h2>配信者一覧</h2>
     <input class="search" id="creatorSearch" placeholder="配信者名で検索" oninput="renderAll()">
+    <div class="row" style="margin-top:8px">
+      <button id="visitedOnlyBtn" type="button" class="secondary" onclick="toggleVisitedOnly()">今月行った人だけ</button>
+      <button id="favoriteOnlyBtn" type="button" class="secondary" onclick="toggleFavoriteOnly()">お気に入りだけ</button>
+    </div>
     <div class="sort-tabs">
       <button id="sortRecent" type="button" onclick="setCreatorSort('recent')">最近</button>
       <button id="sortName" type="button" onclick="setCreatorSort('name')">名前</button>
-      <button id="sortAttend" type="button" onclick="setCreatorSort('attend')">出席</button>
+      <button id="sortFavorite" type="button" onclick="setCreatorSort('favorite')">お気に入り</button>
     </div>
-    <p class="hint">上旬・中旬・下旬の数字をタップするとk数を変更できます。</p>
+    <p class="hint">今月行った人だけ・お気に入りだけで絞り込みできます。上旬・中旬・下旬の数字をタップするとk数を変更できます。</p>
   </div>
   <div id="creatorList"></div>
 </section>
@@ -124,7 +128,7 @@ button.danger{background:#ff4f67}
   <div class="card"><h2>配布するときの注意</h2><p class="hint">このアプリのデータは各端末内に保存されます。<br>他の利用者とデータが共有されることはありません。<br>機種変更や端末故障に備え、定期的なJSONバックアップをおすすめします。</p></div>
   <div class="card"><h2>危険操作</h2><button class="danger" onclick="clearAllData()">全データ削除</button></div>
 </section>
-<div class="footer-note">ColorSing 枠周り管理 Ver3.3<br>個人利用のみ可 / 商用利用・改造・再配布禁止<br>© 2026 ABO All Rights Reserved.</div>
+<div class="footer-note">ColorSing 枠周り管理 Ver3.6<br>個人利用のみ可 / 商用利用・改造・再配布禁止<br>© 2026 ABO All Rights Reserved.</div>
 </main>
 <div class="bottom-tabs">
   <button class="tab active" data-screen="home" onclick="showScreen('home')"><span>📊</span>ホーム</button>
@@ -139,8 +143,8 @@ button.danger{background:#ff4f67}
 <script>
 const KEY='colorsing_wakumawari_v1';
 const K_VALUES=[0,0.1,0.3,0.5,0.7,1,...Array.from({length:38},(_,i)=>i+2)];
-let state={creators:[],records:[],periodK:{},lastSaved:null,lastBackup:null};
-let attend='', editId=null, currentMonth='', creatorSort='name';
+let state={creators:[],records:[],periodK:{},favorites:[],lastSaved:null,lastBackup:null};
+let attend='', editId=null, currentMonth='', creatorSort='name', visitedOnly=false, favoriteOnly=false;
 
 function pad(n){return String(n).padStart(2,'0')}
 function today(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
@@ -160,6 +164,7 @@ function normalizeState(s) {
   ns.creators = Array.isArray(ns.creators) ? ns.creators.map(String) : [];
   ns.records = Array.isArray(ns.records) ? ns.records : [];
   ns.periodK = ns.periodK && typeof ns.periodK==='object' ? ns.periodK : {};
+  ns.favorites = Array.isArray(ns.favorites) ? ns.favorites.map(String) : [];
   ns.lastSaved = ns.lastSaved || null;
   ns.lastBackup = ns.lastBackup || null;
   const names = new Set(ns.creators);
@@ -250,19 +255,25 @@ function summaryByCreator(){
 }
 function isSongOshi(name){const x=summaryByCreator().find(s=>s.name===name); return !!x&&x.kTotal>=1}
 function setCreatorSort(mode){creatorSort=mode;renderAll()}
+function toggleVisitedOnly(){visitedOnly=!visitedOnly;renderAll()}
+function toggleFavoriteOnly(){favoriteOnly=!favoriteOnly;renderAll()}
+function isFavorite(name){return Array.isArray(state.favorites)&&state.favorites.includes(name)}
+function toggleFavorite(name){if(!Array.isArray(state.favorites))state.favorites=[]; if(isFavorite(name)){state.favorites=state.favorites.filter(n=>n!==name);toast('お気に入りを外しました');}else{state.favorites.push(name);toast('お気に入りに追加しました');} persist(true); renderAll();}
 
 function renderAll(){renderSelect();renderHome();renderCreators();renderCalendar();renderBackup()}
 function renderSelect(){const sel=document.getElementById('creatorSelect');const cur=sel.value;sel.innerHTML='<option value="">配信者を選択</option>'+state.creators.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');sel.value=cur;document.getElementById('creatorChips').innerHTML=state.creators.slice(0,12).map(n=>`<button type="button" class="chip" onclick="document.getElementById('creatorSelect').value='${js(n)}'">${esc(n)}</button>`).join('')}
 function renderHome(){document.getElementById('statCreators').textContent=state.creators.length;document.getElementById('statRecords').textContent=monthRecords().length;const recent=state.records.slice().sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0)).slice(0,5);document.getElementById('recentList').innerHTML=recent.length?recent.map(r=>historyHtml(r,false,true)).join(''):'まだ記録がありません。'}
 function periodBox(name,p,value){return `<div class="period clickable" onclick="event.stopPropagation();openPeriodKPicker('${js(name)}','${p}')"><b>${fmtK(value)}</b><span>${p}</span></div>`}
 function renderCreators(){
+  const visitedBtn=document.getElementById('visitedOnlyBtn'); if(visitedBtn)visitedBtn.classList.toggle('active',visitedOnly);
+  const favBtn=document.getElementById('favoriteOnlyBtn'); if(favBtn)favBtn.classList.toggle('active',favoriteOnly);
   const q=(document.getElementById('creatorSearch')?.value||'').trim();
-  let list=summaryByCreator().filter(x=>!q||x.name.includes(q));
+  let list=summaryByCreator().filter(x=>(!q||x.name.includes(q))&&(!visitedOnly||x.records.length>0)&&(!favoriteOnly||isFavorite(x.name)));
   if(creatorSort==='recent')list.sort((a,b)=>(b.last||'').localeCompare(a.last||'')||a.name.localeCompare(b.name,'ja'));
-  else if(creatorSort==='attend')list.sort((a,b)=>b.total-a.total||(b.last||'').localeCompare(a.last||'')||a.name.localeCompare(b.name,'ja'));
+  else if(creatorSort==='favorite')list.sort((a,b)=>(isFavorite(b.name)?1:0)-(isFavorite(a.name)?1:0)||a.name.localeCompare(b.name,'ja'));
   else list.sort((a,b)=>a.name.localeCompare(b.name,'ja'));
-  ['Recent','Name','Attend'].forEach(k=>{const el=document.getElementById('sort'+k);if(el)el.classList.toggle('active',creatorSort===k.toLowerCase())});
-  document.getElementById('creatorList').innerHTML=list.length?list.map(x=>`<div class="creator-card" onclick="openDetail('${js(x.name)}')"><div class="creator-top"><div><div class="creator-name">${esc(x.name)} ${isSongOshi(x.name)?'<span class="badge">歌推し♪</span>':''}</div><div class="small">最終訪問：${esc(x.last||'-')} / 出席：上${x.early}回・中${x.mid}回・下${x.late}回　合計${x.total}回</div></div></div><div class="periods">${periodBox(x.name,'上旬',x.kEarly)}${periodBox(x.name,'中旬',x.kMid)}${periodBox(x.name,'下旬',x.kLate)}<div class="period"><b>${fmtK(x.kTotal)}</b><span>合計</span></div></div></div>`).join(''):'この月の記録がありません。';
+  ['Recent','Name','Favorite'].forEach(k=>{const el=document.getElementById('sort'+k);if(el)el.classList.toggle('active',creatorSort===k.toLowerCase())});
+  document.getElementById('creatorList').innerHTML=list.length?list.map(x=>`<div class="creator-card" onclick="openDetail('${js(x.name)}')"><div class="creator-top"><div><div class="creator-name"><span class="favorite-star ${isFavorite(x.name)?'':'off'}" onclick="event.stopPropagation();toggleFavorite('${js(x.name)}')">${isFavorite(x.name)?'★':'☆'}</span>${esc(x.name)} ${isSongOshi(x.name)?'<span class="badge">歌推し♪</span>':''}</div><div class="small">最終訪問：${esc(x.last||'-')} / 出席：上${x.early}回・中${x.mid}回・下${x.late}回　合計${x.total}回</div></div></div><div class="periods">${periodBox(x.name,'上旬',x.kEarly)}${periodBox(x.name,'中旬',x.kMid)}${periodBox(x.name,'下旬',x.kLate)}<div class="period"><b>${fmtK(x.kTotal)}</b><span>合計</span></div></div></div>`).join(''):'この月の記録がありません。';
 }
 function renderCalendar(){
   document.getElementById('monthInput').value=currentMonth;
@@ -280,7 +291,7 @@ function openRecordDetail(id){const r=state.records.find(x=>x.id===id);if(!r)ret
 function openDetail(name){
   const sum=summaryByCreator().find(x=>x.name===name)||{name,early:0,mid:0,late:0,total:0,kEarly:0,kMid:0,kLate:0,kTotal:0,last:'',records:[]};
   const records=sum.records.slice().sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0));
-  document.getElementById('modalContent').innerHTML=`<div class="modal-title-row"><h2>${esc(name)} ${isSongOshi(name)?'<span class="badge">歌推し♪</span>':''}</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="periods">${periodBox(name,'上旬',sum.kEarly)}${periodBox(name,'中旬',sum.kMid)}${periodBox(name,'下旬',sum.kLate)}<div class="period"><b>${fmtK(sum.kTotal)}</b><span>合計</span></div></div><p class="hint" style="margin-top:8px">上旬・中旬・下旬の数字をタップするとk数を変更できます。</p><p class="small">出席：上${sum.early}回・中${sum.mid}回・下${sum.late}回　合計${sum.total}回</p><div class="toolbar" style="margin-top:12px"><button onclick="addRecordForCreator('${js(name)}')">この配信者で記録追加</button><button class="secondary" onclick="renameCreator('${js(name)}')">名前修正</button><button class="gray" onclick="deleteCreator('${js(name)}')">配信者削除</button></div><h2 style="margin-top:16px">履歴</h2>${records.length?records.map(r=>historyHtml(r,true)).join(''):'この月の履歴はありません。'}`;
+  document.getElementById('modalContent').innerHTML=`<div class="modal-title-row"><h2>${esc(name)} ${isSongOshi(name)?'<span class="badge">歌推し♪</span>':''}</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="periods">${periodBox(name,'上旬',sum.kEarly)}${periodBox(name,'中旬',sum.kMid)}${periodBox(name,'下旬',sum.kLate)}<div class="period"><b>${fmtK(sum.kTotal)}</b><span>合計</span></div></div><p class="hint" style="margin-top:8px">上旬・中旬・下旬の数字をタップするとk数を変更できます。</p><p class="small">出席：上${sum.early}回・中${sum.mid}回・下${sum.late}回　合計${sum.total}回</p><div class="toolbar" style="margin-top:12px"><button onclick="addRecordForCreator('${js(name)}')">この配信者で記録追加</button><button class="secondary" onclick="toggleFavorite('${js(name)}');openDetail('${js(name)}')">${isFavorite(name)?'お気に入りを外す':'お気に入りにする'}</button><button class="secondary" onclick="renameCreator('${js(name)}')">名前修正</button><button class="gray" onclick="deleteCreator('${js(name)}')">配信者削除</button></div><h2 style="margin-top:16px">履歴</h2>${records.length?records.map(r=>historyHtml(r,true)).join(''):'この月の履歴はありません。'}`;
   document.getElementById('detailModal').style.display='flex';
 }
 function openPeriodKPicker(name,p){
@@ -291,13 +302,13 @@ function openPeriodKPicker(name,p){
 }
 function openDate(date){const rs=state.records.filter(r=>r.date===date);if(!rs.length){toast('この日の記録はありません');return}document.getElementById('modalContent').innerHTML=`<div class="modal-title-row"><h2>${esc(date)} の記録</h2><button class="modal-close" onclick="closeModal()">×</button></div>${rs.map(r=>historyHtml(r,true)).join('')}`;document.getElementById('detailModal').style.display='flex'}
 function addRecordForCreator(name){resetForm();document.getElementById('dateInput').value=today();document.getElementById('creatorSelect').value=name;closeModal();showScreen('add')}
-function renameCreator(oldName){const newName=(prompt('新しい配信者名を入力してください',oldName)||'').trim();if(!newName||newName===oldName)return;if(state.creators.includes(newName)&&!confirm('同じ名前の配信者がいます。記録をまとめてもよろしいですか？'))return;state.records.forEach(r=>{if(r.creator===oldName)r.creator=newName});ensurePeriodK();Object.keys(state.periodK).forEach(m=>{if(state.periodK[m]?.[oldName]){state.periodK[m][newName]=state.periodK[m][oldName];delete state.periodK[m][oldName]}});state.creators=state.creators.filter(n=>n!==oldName);if(!state.creators.includes(newName))state.creators.push(newName);persist();openDetail(newName);toast('配信者名を修正しました')}
-function deleteCreator(name){const count=state.records.filter(r=>r.creator===name).length;if(!confirm(`配信者「${name}」を削除しますか？\n関連する記録 ${count}件も削除されます。`))return;if(count>0&&!confirm('本当に削除しますか？バックアップがないと戻せません。'))return;state.creators=state.creators.filter(n=>n!==name);state.records=state.records.filter(r=>r.creator!==name);ensurePeriodK();Object.keys(state.periodK).forEach(m=>{if(state.periodK[m])delete state.periodK[m][name]});persist();closeModal();toast('配信者を削除しました')}
+function renameCreator(oldName){const newName=(prompt('新しい配信者名を入力してください',oldName)||'').trim();if(!newName||newName===oldName)return;if(state.creators.includes(newName)&&!confirm('同じ名前の配信者がいます。記録をまとめてもよろしいですか？'))return;state.records.forEach(r=>{if(r.creator===oldName)r.creator=newName});ensurePeriodK();Object.keys(state.periodK).forEach(m=>{if(state.periodK[m]?.[oldName]){state.periodK[m][newName]=state.periodK[m][oldName];delete state.periodK[m][oldName]}});state.creators=state.creators.filter(n=>n!==oldName);if(!state.creators.includes(newName))state.creators.push(newName);if(isFavorite(oldName)){state.favorites=state.favorites.filter(n=>n!==oldName);if(!state.favorites.includes(newName))state.favorites.push(newName);}persist();openDetail(newName);toast('配信者名を修正しました')}
+function deleteCreator(name){const count=state.records.filter(r=>r.creator===name).length;if(!confirm(`配信者「${name}」を削除しますか？\n関連する記録 ${count}件も削除されます。`))return;if(count>0&&!confirm('本当に削除しますか？バックアップがないと戻せません。'))return;state.creators=state.creators.filter(n=>n!==name);state.records=state.records.filter(r=>r.creator!==name);state.favorites=(state.favorites||[]).filter(n=>n!==name);ensurePeriodK();Object.keys(state.periodK).forEach(m=>{if(state.periodK[m])delete state.periodK[m][name]});persist();closeModal();toast('配信者を削除しました')}
 function ensurePeriodK(){if(!state.periodK||typeof state.periodK!=='object')state.periodK={}}
 function changeMonth(diff){const [y,m]=currentMonth.split('-').map(Number);const d=new Date(y,m-1+diff,1);currentMonth=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;renderAll()}
 function downloadBackup(){state.lastBackup=new Date().toISOString();persist(true);const data={app:'colorsing-wakumawari',version:3,exportedAt:new Date().toISOString(),state};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`wakumawari_backup_${today()}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);renderAll();toast('バックアップを作成しました')}
-function restoreBackup(ev){const file=ev.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);const s=data.state||data;if(!Array.isArray(s.records)||!Array.isArray(s.creators))throw new Error('形式が違います');if(!confirm('バックアップを復元します。現在のデータは上書きされます。よろしいですか？'))return;state=normalizeState({creators:s.creators||[],records:s.records||[],periodK:s.periodK||{},lastSaved:new Date().toISOString(),lastBackup:s.lastBackup||null});localStorage.setItem(KEY,JSON.stringify(state));renderAll();toast('復元しました')}catch(e){alert('復元できませんでした。JSONファイルを確認してください。')}ev.target.value=''};reader.readAsText(file)}
-function clearAllData(){if(!confirm('全データを削除します。バックアップがないと戻せません。'))return;if(!confirm('本当に削除しますか？'))return;state={creators:[],records:[],periodK:{},lastSaved:null,lastBackup:null};localStorage.removeItem(KEY);resetForm();renderAll();toast('全データを削除しました')}
+function restoreBackup(ev){const file=ev.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);const s=data.state||data;if(!Array.isArray(s.records)||!Array.isArray(s.creators))throw new Error('形式が違います');if(!confirm('バックアップを復元します。現在のデータは上書きされます。よろしいですか？'))return;state=normalizeState({creators:s.creators||[],records:s.records||[],periodK:s.periodK||{},favorites:s.favorites||[],lastSaved:new Date().toISOString(),lastBackup:s.lastBackup||null});localStorage.setItem(KEY,JSON.stringify(state));renderAll();toast('復元しました')}catch(e){alert('復元できませんでした。JSONファイルを確認してください。')}ev.target.value=''};reader.readAsText(file)}
+function clearAllData(){if(!confirm('全データを削除します。バックアップがないと戻せません。'))return;if(!confirm('本当に削除しますか？'))return;state={creators:[],records:[],periodK:{},favorites:[],lastSaved:null,lastBackup:null};localStorage.removeItem(KEY);resetForm();renderAll();toast('全データを削除しました')}
 load();
 </script>
 </body>
