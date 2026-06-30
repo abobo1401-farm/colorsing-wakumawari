@@ -124,7 +124,7 @@ button.danger{background:#ff4f67}
   <div class="card"><h2>配布するときの注意</h2><p class="hint">このアプリのデータは各端末内に保存されます。<br>他の利用者とデータが共有されることはありません。<br>機種変更や端末故障に備え、定期的なJSONバックアップをおすすめします。</p></div>
   <div class="card"><h2>危険操作</h2><button class="danger" onclick="clearAllData()">全データ削除</button></div>
 </section>
-<div class="footer-note">ColorSing 枠周り管理 Ver3.0<br>個人利用のみ可 / 商用利用・改造・再配布禁止<br>© 2026 ABO All Rights Reserved.</div>
+<div class="footer-note">ColorSing 枠周り管理 Ver3.2<br>個人利用のみ可 / 商用利用・改造・再配布禁止<br>© 2026 ABO All Rights Reserved.</div>
 </main>
 <div class="bottom-tabs">
   <button class="tab active" data-screen="home" onclick="showScreen('home')"><span>📊</span>ホーム</button>
@@ -221,7 +221,16 @@ function deleteRecord(id){if(!confirm('この記録を削除しますか？'))re
 
 function ensurePeriodK(){if(!state.periodK||typeof state.periodK!=='object')state.periodK={}}
 function getManualK(name,p){ensurePeriodK(); const v=state.periodK?.[currentMonth]?.[name]?.[p]; return v===undefined||v===null||v==='' ? null : Number(v)}
-function setCreatorPeriodK(name,p,value){ensurePeriodK(); if(!state.periodK[currentMonth])state.periodK[currentMonth]={}; if(!state.periodK[currentMonth][name])state.periodK[currentMonth][name]={}; state.periodK[currentMonth][name][p]=Number(value||0); persist(true); renderAll(); openDetail(name); toast('応援k数を更新しました')}
+function setCreatorPeriodK(name,p,value){
+  ensurePeriodK();
+  if(!state.periodK[currentMonth])state.periodK[currentMonth]={};
+  if(!state.periodK[currentMonth][name])state.periodK[currentMonth][name]={};
+  state.periodK[currentMonth][name][p]=Number(value||0);
+  persist(true);
+  renderAll();
+  closeModal();
+  toast('応援k数を更新しました');
+}
 function finalK(name,p,recordVal){const m=getManualK(name,p); return m===null ? recordVal : m}
 
 function monthRecords(){return state.records.filter(r=>ym(r.date)===currentMonth).sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0))}
