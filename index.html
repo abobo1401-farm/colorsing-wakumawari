@@ -93,11 +93,11 @@ button.danger{background:#ff4f67}
     <select id="creatorSelect"><option value="">配信者を選択</option></select>
     <div class="row" style="margin-top:8px"><input id="newCreatorInput" placeholder="新規配信者名を入力"><button type="button" class="secondary" onclick="addCreatorFromInput()">追加</button></div>
     <div class="chips" id="creatorChips"></div>
-    <label class="label">出席（スーパーいいね5回）</label>
+    <label class="label">出席（スーパーいいね5回） / ♡メモ</label>
     <div class="seg">
       <button id="yesBtn" type="button" onclick="setAttend('YES')">YES</button>
-      <select id="noMemoSelect" onchange="setAttend(this.value)">
-        <option value="NO">NO</option>
+      <select id="heartMemoSelect" onchange="setAttend(this.value)">
+        <option value="">なし</option>
         <option value="♡1">♡1</option>
         <option value="♡2">♡2</option>
         <option value="♡3">♡3</option>
@@ -137,7 +137,7 @@ button.danger{background:#ff4f67}
   <div class="card"><h2>配布するときの注意</h2><p class="hint">このアプリのデータは各端末内に保存されます。<br>他の利用者とデータが共有されることはありません。<br>機種変更や端末故障に備え、定期的なJSONバックアップをおすすめします。</p></div>
   <div class="card"><h2>危険操作</h2><button class="danger" onclick="clearAllData()">全データ削除</button></div>
 </section>
-<div class="footer-note">ColorSing 枠周り管理 Ver4.1<br>個人利用のみ可 / 商用利用・改造・再配布禁止<br>© 2026 ABO All Rights Reserved.</div>
+<div class="footer-note">ColorSing 枠周り管理 Ver4.2<br>個人利用のみ可 / 商用利用・改造・再配布禁止<br>© 2026 ABO All Rights Reserved.</div>
 </main>
 <div class="bottom-tabs">
   <button class="tab active" data-screen="home" onclick="showScreen('home')"><span>📊</span>ホーム</button>
@@ -163,8 +163,7 @@ function period(date){const day=Number(String(date).slice(8,10)); if(day<=10)ret
 function esc(s){return String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function js(s){return String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n')}
 function isHeart(v){return v==='♡1'||v==='♡2'||v==='♡3'||v==='♡4'}
-function showTempAttend(r){return isHeart(r.attend)&&r.date===today()}
-function attendLabel(r){if(isAttend(r.attend))return '✅ 出席'; if(showTempAttend(r))return r.attend; return ''}
+function attendLabel(r){if(isAttend(r.attend))return '✅ 出席'; if(isHeart(r.attend))return r.attend; return ''}
 function isAttend(v){return v==='YES'||v==='出席'||v===true}
 function kValue(r){const v=Number(r?.k ?? r?.supportK ?? r?.support ?? 0);return Number.isFinite(v)?v:0}
 function fmtK(v){v=Number(v||0); if(!v)return '0k'; return (Number.isInteger(v)?String(v):v.toFixed(1).replace(/\.0$/,''))+'k'}
@@ -209,18 +208,17 @@ function showScreen(id){
 }
 function closeModal(){document.getElementById('detailModal').style.display='none'}
 function setAttend(v){
-  attend=(v==='YES'||v==='NO'||v==='♡1'||v==='♡2'||v==='♡3'||v==='♡4')?v:'';
+  attend=(v==='YES'||v==='♡1'||v==='♡2'||v==='♡3'||v==='♡4')?v:'';
   const y=document.getElementById('yesBtn');
-  const s=document.getElementById('noMemoSelect');
+  const s=document.getElementById('heartMemoSelect');
   if(y)y.classList.toggle('active',attend==='YES');
-  if(s && attend!=='YES' && attend)s.value=attend;
-  if(s && attend==='YES')s.value='NO';
+  if(s)s.value=(attend==='YES')?'':attend;
 }
 function setMonth(v){currentMonth=v||ym(today()); renderAll()}
 
 function addCreator(name){name=(name||'').trim(); if(!name)return ''; if(!state.creators.includes(name)){state.creators.push(name); state.creators.sort((a,b)=>a.localeCompare(b,'ja')); persist(true);} return name}
 function addCreatorFromInput(){const name=addCreator(document.getElementById('newCreatorInput').value); if(name){document.getElementById('creatorSelect').value=name; document.getElementById('newCreatorInput').value=''; renderAll(); toast('配信者を追加しました');}}
-function resetForm(){editId=null;document.getElementById('formTitle').textContent='記録追加';document.getElementById('saveBtn').textContent='保存する';document.getElementById('dateInput').value=today();document.getElementById('creatorSelect').value='';document.getElementById('newCreatorInput').value='';document.getElementById('memoInput').value='';setAttend('');const nm=document.getElementById('noMemoSelect');if(nm)nm.value='NO'}
+function resetForm(){editId=null;document.getElementById('formTitle').textContent='記録追加';document.getElementById('saveBtn').textContent='保存する';document.getElementById('dateInput').value=today();document.getElementById('creatorSelect').value='';document.getElementById('newCreatorInput').value='';document.getElementById('memoInput').value='';setAttend('');const hm=document.getElementById('heartMemoSelect');if(hm)hm.value=''}
 
 function saveRecord(){
   const date=document.getElementById('dateInput').value;
@@ -242,7 +240,7 @@ function saveRecord(){
   showScreen('creators');
   setTimeout(()=>openDetail(creator),150);
 }
-function editRecord(id){const r=state.records.find(x=>x.id===id); if(!r)return; editId=id;document.getElementById('dateInput').value=r.date;document.getElementById('creatorSelect').value=r.creator;document.getElementById('memoInput').value=r.memo||'';if(isHeart(r.attend)){setAttend('');const hm=document.getElementById('heartMemoInput');if(hm)hm.value=r.attend;}else{setAttend(r.attend);const nm=document.getElementById('noMemoSelect');if(nm)nm.value='NO';}document.getElementById('formTitle').textContent='記録修正';document.getElementById('saveBtn').textContent='修正保存';showScreen('add');closeModal()}
+function editRecord(id){const r=state.records.find(x=>x.id===id); if(!r)return; editId=id;document.getElementById('dateInput').value=r.date;document.getElementById('creatorSelect').value=r.creator;document.getElementById('memoInput').value=r.memo||'';if(isHeart(r.attend)){setAttend('');const hm=document.getElementById('heartMemoInput');if(hm)hm.value=r.attend;}else{setAttend(r.attend);const hm=document.getElementById('heartMemoSelect');if(hm)hm.value='';}document.getElementById('formTitle').textContent='記録修正';document.getElementById('saveBtn').textContent='修正保存';showScreen('add');closeModal()}
 function deleteRecord(id){if(!confirm('この記録を削除しますか？'))return; state.records=state.records.filter(r=>r.id!==id); persist(); closeModal(); toast('削除しました')}
 
 function ensurePeriodK(){if(!state.periodK||typeof state.periodK!=='object')state.periodK={}}
