@@ -50,7 +50,7 @@ button.danger{background:#ff4f67}
 .creator-card{border:1px solid var(--line);border-radius:18px;background:#fff;margin:10px 0;padding:14px}
 .creator-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .creator-name{font-size:18px;font-weight:900}.favorite-star{display:inline-block;margin-right:6px;font-size:20px;color:var(--main);cursor:pointer;vertical-align:-1px}.favorite-star.off{color:#d6c8cf}
-.badge{border-radius:999px;padding:4px 8px;font-size:11px;font-weight:800;background:color-mix(in srgb, var(--main) 14%, white);color:var(--main);display:inline-block}.badge.song{background:color-mix(in srgb, var(--main) 14%, white);color:var(--main)}.badge.member{background:#efffdb;color:#64b500}
+.badge{border-radius:999px;padding:4px 8px;font-size:11px;font-weight:800;background:#fff0f7;color:var(--main);display:inline-block}.badge.song{background:#fff0f7;color:#ff4fa3}.badge.member{background:#efffdb;color:#64b500}
 .periods{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px}
 .period{background:#fff7fb;border:1px solid var(--line);border-radius:13px;padding:8px 4px;text-align:center}
 .period.clickable{cursor:pointer}.period.clickable:active{transform:scale(.97);background:#fff0f7}
@@ -166,7 +166,7 @@ button.danger{background:#ff4f67}
   </div>
   <div class="card"><h2>危険操作</h2><button class="danger" onclick="clearAllData()">全データ削除</button></div>
 </section>
-<div class="footer-note">ColorSing 枠周り管理 Ver4.6.1<br>個人利用のみ可 / 商用利用・改造・再配布禁止<br>© 2026 ABO All Rights Reserved.</div>
+<div class="footer-note">ColorSing 枠周り管理 Ver4.6<br>個人利用のみ可 / 商用利用・改造・再配布禁止<br>© 2026 ABO All Rights Reserved.</div>
 </main>
 <div class="bottom-tabs">
   <button class="tab active" data-screen="home" onclick="showScreen('home')"><span>📊</span>ホーム</button>
@@ -353,7 +353,18 @@ function isFavorite(name){return Array.isArray(state.favorites)&&state.favorites
 function toggleFavorite(name){if(!Array.isArray(state.favorites))state.favorites=[]; if(isFavorite(name)){state.favorites=state.favorites.filter(n=>n!==name);toast('お気に入りを外しました');}else{state.favorites.push(name);toast('お気に入りに追加しました');} persist(true); renderAll();}
 
 function renderAll(){applyTheme(themeColor);renderSelect();renderHome();renderCreators();renderCalendar();renderBackup()}
-function renderSelect(){const sel=document.getElementById('creatorSelect');const cur=sel.value;sel.innerHTML='<option value="">配信者を選択</option>'+state.creators.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');sel.value=cur;document.getElementById('creatorChips').innerHTML=state.creators.slice(0,12).map(n=>`<button type="button" class="chip" onclick="document.getElementById('creatorSelect').value='${js(n)}'">${esc(n)}</button>`).join('')}
+
+function recentCreatorOrder(){
+  const seen=new Set();
+  const ordered=[];
+  state.records.slice().sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0)).forEach(r=>{
+    if(r.creator&&!seen.has(r.creator)){seen.add(r.creator);ordered.push(r.creator);}
+  });
+  state.creators.forEach(n=>{if(!seen.has(n))ordered.push(n);});
+  return ordered;
+}
+
+function renderSelect(){const sel=document.getElementById('creatorSelect');const cur=sel.value;sel.innerHTML='<option value="">配信者を選択</option>'+recentCreatorOrder().map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');sel.value=cur;document.getElementById('creatorChips').innerHTML=recentCreatorOrder().slice(0,12).map(n=>`<button type="button" class="chip" onclick="document.getElementById('creatorSelect').value='${js(n)}'">${esc(n)}</button>`).join('')}
 function renderHome(){document.getElementById('statCreators').textContent=state.creators.length;document.getElementById('statRecords').textContent=monthRecords().length;const todayLikeTotal=state.records.filter(r=>r.date===today()).reduce((sum,r)=>sum+likeValue(r),0);const tl=document.getElementById('todayLikes');if(tl)tl.textContent=todayLikeTotal;const recent=state.records.slice().sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0)).slice(0,6);document.getElementById('recentList').innerHTML=recent.length?recent.map(r=>historyHtml(r,false,true)).join(''):'まだ記録がありません。'}
 function periodBox(name,p,value){return `<div class="period clickable" onclick="event.stopPropagation();openPeriodKPicker('${js(name)}','${p}')"><b>${fmtK(value)}</b><span>${p}</span></div>`}
 function renderCreators(){
