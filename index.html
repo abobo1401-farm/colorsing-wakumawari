@@ -19,7 +19,7 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:
 body{padding-bottom:92px;}
 header{position:sticky;top:0;z-index:5;background:linear-gradient(135deg,var(--main),var(--main2));color:#fff;padding:18px 16px 14px;border-bottom-left-radius:22px;border-bottom-right-radius:22px;box-shadow:var(--shadow)}
 header h1{font-size:20px;margin:0 0 4px;font-weight:800;letter-spacing:.02em}
-header p{margin:0;font-size:12px;opacity:.94}
+header p{margin:0;font-size:12px;opacity:.94}.header-row{display:flex;align-items:center;justify-content:space-between;gap:10px}.today-like-badge{text-align:center;min-width:76px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);border-radius:14px;padding:7px 9px}.today-like-badge span{display:block;font-size:10px;opacity:.95}.today-like-badge b{display:block;font-size:22px;line-height:1;color:#fff}
 main{padding:14px;max-width:720px;margin:auto}
 .screen{display:none}.screen.active{display:block}
 .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin:12px 0;box-shadow:var(--shadow)}
@@ -41,7 +41,7 @@ button.gray{background:#f4eef2;color:var(--text);box-shadow:none}
 button.danger{background:#ff4f67}
 .seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .seg button{background:#f4eef2;color:var(--muted);box-shadow:none}
-.seg button.active{background:var(--main);color:#fff}
+.seg button.active{background:var(--main);color:#fff}.like-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.like-grid button{background:#f4eef2;color:var(--muted);box-shadow:none;padding:9px 4px;font-size:13px}.like-grid button.active{background:var(--main);color:#fff}
 .chips{display:flex;gap:8px;overflow:auto;padding:4px 0}
 .chip{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 12px;font-size:13px;color:var(--text)}
 .sort-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0 6px}
@@ -50,7 +50,7 @@ button.danger{background:#ff4f67}
 .creator-card{border:1px solid var(--line);border-radius:18px;background:#fff;margin:10px 0;padding:14px}
 .creator-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
 .creator-name{font-size:18px;font-weight:900}.favorite-star{display:inline-block;margin-right:6px;font-size:20px;color:var(--main);cursor:pointer;vertical-align:-1px}.favorite-star.off{color:#d6c8cf}
-.badge{border-radius:999px;padding:4px 8px;font-size:11px;font-weight:800;background:#fff0f7;color:var(--main);display:inline-block}.badge.song{background:#fff0f7;color:#ff4fa3}.badge.member{background:#efffdb;color:#64b500}
+.badge{border-radius:999px;padding:4px 8px;font-size:11px;font-weight:800;background:color-mix(in srgb, var(--main) 14%, white);color:var(--main);display:inline-block}.badge.song{background:color-mix(in srgb, var(--main) 14%, white);color:var(--main)}.badge.member{background:#efffdb;color:#64b500}
 .periods{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px}
 .period{background:#fff7fb;border:1px solid var(--line);border-radius:13px;padding:8px 4px;text-align:center}
 .period.clickable{cursor:pointer}.period.clickable:active{transform:scale(.97);background:#fff0f7}
@@ -71,12 +71,23 @@ button.danger{background:#ff4f67}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:20;display:none;align-items:flex-end}
 .modal-inner{background:#fff;border-top-left-radius:22px;border-top-right-radius:22px;padding:16px;max-height:80vh;overflow:auto;width:100%}.modal-title-row{display:flex;align-items:center;justify-content:space-between;gap:8px}.modal-title-row h2{margin:0}.modal-close{background:#f4eef2;color:var(--muted);box-shadow:none;border-radius:999px;width:38px;height:38px;padding:0;font-size:20px;line-height:1;min-width:38px}
 .search{margin:8px 0 4px}
-.footer-note{text-align:center;margin:18px 0;color:var(--muted);font-size:12px}
+.footer-note{text-align:center;margin:18px 0;color:var(--muted);font-size:12px}.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.theme-btn{box-shadow:none;border:1px solid var(--line);font-size:12px;padding:9px 6px}.theme-btn.active{outline:3px solid rgba(255,111,174,.28)}
 @media(min-width:700px){.bottom-tabs{max-width:720px;left:50%;transform:translateX(-50%);border-radius:22px 22px 0 0}.modal{align-items:center;justify-content:center}.modal-inner{max-width:520px;border-radius:22px}}
 </style>
 </head>
 <body>
-<header><h1>ColorSing 枠周り管理✍️</h1><p>応援記録・歌推し管理。データはこの端末内に保存されます。</p></header>
+<header>
+  <div class="header-row">
+    <div>
+      <h1>ColorSing 枠周り管理✍️</h1>
+      <p>応援記録・歌推し管理。データはこの端末内に保存されます。</p>
+    </div>
+    <div class="today-like-badge">
+      <span>今日の♡</span>
+      <b id="todayLikes">0</b>
+    </div>
+  </div>
+</header>
 <main>
 <section id="home" class="screen active">
   <div class="grid">
@@ -93,17 +104,24 @@ button.danger{background:#ff4f67}
     <select id="creatorSelect"><option value="">配信者を選択</option></select>
     <div class="row" style="margin-top:8px"><input id="newCreatorInput" placeholder="新規配信者名を入力"><button type="button" class="secondary" onclick="addCreatorFromInput()">追加</button></div>
     <div class="chips" id="creatorChips"></div>
-    <label class="label">出席（スーパーいいね5回） / ♡メモ</label>
-    <div class="seg">
-      <button id="yesBtn" type="button" onclick="setAttend('YES')">YES</button>
-      <select id="heartMemoSelect" onchange="setAttend(this.value)">
-        <option value="">なし</option>
-        <option value="♡1">♡1</option>
-        <option value="♡2">♡2</option>
-        <option value="♡3">♡3</option>
-        <option value="♡4">♡4</option>
-      </select>
+    <label class="label">出席（スーパーいいね5回）/メモ</label>
+    <div class="row" style="margin-bottom:8px">
+      <button id="yesBtn" class="secondary" type="button" onclick="pressYes()">YES（5）</button>
+      <button class="gray" type="button" onclick="setLikeCount(0)">クリア</button>
     </div>
+    <div class="like-grid" id="likeButtons">
+      <button id="like1Btn" type="button" onclick="setLikeCount(1)">♡1</button>
+      <button id="like2Btn" type="button" onclick="setLikeCount(2)">♡2</button>
+      <button id="like3Btn" type="button" onclick="setLikeCount(3)">♡3</button>
+      <button id="like4Btn" type="button" onclick="setLikeCount(4)">♡4</button>
+      <button id="like5Btn" type="button" onclick="setLikeCount(5)">♡5</button>
+      <button id="like6Btn" type="button" onclick="setLikeCount(6)">♡6</button>
+      <button id="like7Btn" type="button" onclick="setLikeCount(7)">♡7</button>
+      <button id="like8Btn" type="button" onclick="setLikeCount(8)">♡8</button>
+      <button id="like9Btn" type="button" onclick="setLikeCount(9)">♡9</button>
+      <button id="like10Btn" type="button" onclick="setLikeCount(10)">♡10</button>
+    </div>
+    <p class="hint">♡5以上で出席として集計されます。YESを押すと自動で♡5になります。</p>
     <label class="label">配信内容や印象</label><textarea id="memoInput" placeholder="歌枠、雑談、印象、次回話したいことなど"></textarea>
     <div class="toolbar" style="margin-top:12px"><button onclick="saveRecord()" id="saveBtn">保存する</button><button class="gray" onclick="resetForm()">入力クリア</button></div>
   </div>
@@ -135,9 +153,20 @@ button.danger{background:#ff4f67}
     <input id="restoreFile" type="file" accept="application/json,.json" style="display:none" onchange="restoreBackup(event)">
   </div>
   <div class="card"><h2>配布するときの注意</h2><p class="hint">このアプリのデータは各端末内に保存されます。<br>他の利用者とデータが共有されることはありません。<br>機種変更や端末故障に備え、定期的なJSONバックアップをおすすめします。</p></div>
+  <div class="card"><h2>テーマカラー</h2>
+    <div class="theme-grid">
+      <button class="theme-btn" id="themePink" onclick="setTheme('pink')">ピンク</button>
+      <button class="theme-btn" id="themeBlue" onclick="setTheme('blue')">青</button>
+      <button class="theme-btn" id="themeGreen" onclick="setTheme('green')">緑</button>
+      <button class="theme-btn" id="themePurple" onclick="setTheme('purple')">紫</button>
+      <button class="theme-btn" id="themeOrange" onclick="setTheme('orange')">オレンジ</button>
+      <button class="theme-btn" id="themeYellow" onclick="setTheme('yellow')">黄</button>
+      <button class="theme-btn" id="themeRed" onclick="setTheme('red')">赤</button>
+    </div>
+  </div>
   <div class="card"><h2>危険操作</h2><button class="danger" onclick="clearAllData()">全データ削除</button></div>
 </section>
-<div class="footer-note">ColorSing 枠周り管理 Ver4.2<br>個人利用のみ可 / 商用利用・改造・再配布禁止<br>© 2026 ABO All Rights Reserved.</div>
+<div class="footer-note">ColorSing 枠周り管理 Ver4.6.1<br>個人利用のみ可 / 商用利用・改造・再配布禁止<br>© 2026 ABO All Rights Reserved.</div>
 </main>
 <div class="bottom-tabs">
   <button class="tab active" data-screen="home" onclick="showScreen('home')"><span>📊</span>ホーム</button>
@@ -153,7 +182,7 @@ button.danger{background:#ff4f67}
 const KEY='colorsing_wakumawari_v1';
 const K_VALUES=[0,0.1,0.3,0.5,0.7,1,...Array.from({length:38},(_,i)=>i+2)];
 let state={creators:[],records:[],periodK:{},favorites:[],members:[],deadlines:{},lastSaved:null,lastBackup:null};
-let attend='', editId=null, currentMonth='', creatorSort='name', visitedOnly=false, favoriteOnly=false;
+let attend='', editId=null, currentMonth='', creatorSort='name', visitedOnly=false, favoriteOnly=false, likeCount=0, themeColor='pink';
 
 function pad(n){return String(n).padStart(2,'0')}
 function today(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
@@ -165,6 +194,33 @@ function js(s){return String(s??'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").re
 function isHeart(v){return v==='♡1'||v==='♡2'||v==='♡3'||v==='♡4'}
 function attendLabel(r){if(isAttend(r.attend))return '✅ 出席'; if(isHeart(r.attend))return r.attend; return ''}
 function isAttend(v){return v==='YES'||v==='出席'||v===true}
+function likeValue(r){const v=Number(r?.likes ?? r?.likeCount ?? 0); if(Number.isFinite(v)&&v>0)return v; if(r?.attend==='YES'||r?.attend==='出席'||r?.attend===true)return 5; if(r?.attend==='♡1')return 1; if(r?.attend==='♡2')return 2; if(r?.attend==='♡3')return 3; if(r?.attend==='♡4')return 4; return 0}
+function pressYes(){
+  if(likeCount>=5){
+    setLikeCount(likeCount);
+  }else{
+    setLikeCount(5);
+  }
+}
+function setLikeCount(n){
+  n=Number(n||0);
+  likeCount=n;
+  attend=n>=5?'YES':'';
+  const yes=document.getElementById('yesBtn');
+  if(yes){
+    yes.classList.toggle('active',n>=5);
+  }
+  for(let i=1;i<=10;i++){
+    const b=document.getElementById('like'+i+'Btn');
+    if(b)b.classList.toggle('active',i===n);
+  }
+}
+function isAttend(vOrRecord){
+  if(typeof vOrRecord==='object')return likeValue(vOrRecord)>=5;
+  return vOrRecord==='YES'||vOrRecord==='出席'||vOrRecord===true;
+}
+function attendLabel(r){const lv=likeValue(r); if(lv>=5)return '✅ 出席'; if(lv>0)return '♡'+lv; return ''}
+
 function kValue(r){const v=Number(r?.k ?? r?.supportK ?? r?.support ?? 0);return Number.isFinite(v)?v:0}
 function fmtK(v){v=Number(v||0); if(!v)return '0k'; return (Number.isInteger(v)?String(v):v.toFixed(1).replace(/\.0$/,''))+'k'}
 function kOptionsHtml(selected=0){return K_VALUES.map(v=>`<option value="${v}" ${Number(selected)===Number(v)?'selected':''}>${v===0?'0k（未選択）':fmtK(v)}</option>`).join('')}
@@ -195,6 +251,7 @@ function load(){
   currentMonth=ym(today());
   document.getElementById('dateInput').value=today();
   document.getElementById('monthInput').value=currentMonth;
+  applyTheme(localStorage.getItem(KEY+'_theme')||'pink');
   renderAll();
 }
 function persist(noRender=false){state=normalizeState(state); state.lastSaved=new Date().toISOString(); localStorage.setItem(KEY,JSON.stringify(state)); if(!noRender)renderAll();}
@@ -218,21 +275,21 @@ function setMonth(v){currentMonth=v||ym(today()); renderAll()}
 
 function addCreator(name){name=(name||'').trim(); if(!name)return ''; if(!state.creators.includes(name)){state.creators.push(name); state.creators.sort((a,b)=>a.localeCompare(b,'ja')); persist(true);} return name}
 function addCreatorFromInput(){const name=addCreator(document.getElementById('newCreatorInput').value); if(name){document.getElementById('creatorSelect').value=name; document.getElementById('newCreatorInput').value=''; renderAll(); toast('配信者を追加しました');}}
-function resetForm(){editId=null;document.getElementById('formTitle').textContent='記録追加';document.getElementById('saveBtn').textContent='保存する';document.getElementById('dateInput').value=today();document.getElementById('creatorSelect').value='';document.getElementById('newCreatorInput').value='';document.getElementById('memoInput').value='';setAttend('');const hm=document.getElementById('heartMemoSelect');if(hm)hm.value=''}
+function resetForm(){editId=null;document.getElementById('formTitle').textContent='記録追加';document.getElementById('saveBtn').textContent='保存する';document.getElementById('dateInput').value=today();document.getElementById('creatorSelect').value='';document.getElementById('newCreatorInput').value='';document.getElementById('memoInput').value='';setLikeCount(0)}
 
 function saveRecord(){
   const date=document.getElementById('dateInput').value;
   let creator=document.getElementById('creatorSelect').value || document.getElementById('newCreatorInput').value.trim();
-  const memo=document.getElementById('memoInput').value.trim();
+  const memo=document.getElementById('memoInput').value.trim(); const finalLikes=Number(likeCount||0); const finalAttend=finalLikes>=5?'YES':'';
   if(!date){alert('日付を選んでください');return}
   if(!creator){alert('配信者名を選択または入力してください');return}
   creator=addCreator(creator);
   const wasEdit=!!editId;
   if(editId){
     const r=state.records.find(x=>x.id===editId);
-    if(r){r.date=date;r.creator=creator;r.attend=attend;r.memo=memo;r.updatedAt=new Date().toISOString();}
+    if(r){r.date=date;r.creator=creator;r.attend=finalAttend;r.likes=finalLikes;r.memo=memo;r.updatedAt=new Date().toISOString();}
   } else {
-    state.records.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),date,creator,attend,memo,createdAt:new Date().toISOString()});
+    state.records.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),date,creator,attend:finalAttend,likes:finalLikes,memo,createdAt:new Date().toISOString()});
   }
   persist(true);
   resetForm();
@@ -240,7 +297,7 @@ function saveRecord(){
   showScreen('creators');
   setTimeout(()=>openDetail(creator),150);
 }
-function editRecord(id){const r=state.records.find(x=>x.id===id); if(!r)return; editId=id;document.getElementById('dateInput').value=r.date;document.getElementById('creatorSelect').value=r.creator;document.getElementById('memoInput').value=r.memo||'';if(isHeart(r.attend)){setAttend('');const hm=document.getElementById('heartMemoInput');if(hm)hm.value=r.attend;}else{setAttend(r.attend);const hm=document.getElementById('heartMemoSelect');if(hm)hm.value='';}document.getElementById('formTitle').textContent='記録修正';document.getElementById('saveBtn').textContent='修正保存';showScreen('add');closeModal()}
+function editRecord(id){const r=state.records.find(x=>x.id===id); if(!r)return; editId=id;document.getElementById('dateInput').value=r.date;document.getElementById('creatorSelect').value=r.creator;document.getElementById('memoInput').value=r.memo||'';if(isHeart(r.attend)){setAttend('');const hm=document.getElementById('heartMemoInput');if(hm)hm.value=r.attend;}else{setLikeCount(likeValue(r));const hm=document.getElementById('heartMemoSelect');if(hm)hm.value='';}document.getElementById('formTitle').textContent='記録修正';document.getElementById('saveBtn').textContent='修正保存';showScreen('add');closeModal()}
 function deleteRecord(id){if(!confirm('この記録を削除しますか？'))return; state.records=state.records.filter(r=>r.id!==id); persist(); closeModal(); toast('削除しました')}
 
 function ensurePeriodK(){if(!state.periodK||typeof state.periodK!=='object')state.periodK={}}
@@ -267,7 +324,7 @@ function summaryByCreator(){
     if(!s[r.creator].last||r.date>s[r.creator].last)s[r.creator].last=r.date;
     const p=period(r.date), kv=kValue(r);
     if(p==='上旬')s[r.creator].kEarlyRecord+=kv; if(p==='中旬')s[r.creator].kMidRecord+=kv; if(p==='下旬')s[r.creator].kLateRecord+=kv;
-    if(isAttend(r.attend)){if(p==='上旬')s[r.creator].early++; if(p==='中旬')s[r.creator].mid++; if(p==='下旬')s[r.creator].late++; s[r.creator].total++;}
+    if(isAttend(r)){if(p==='上旬')s[r.creator].early++; if(p==='中旬')s[r.creator].mid++; if(p==='下旬')s[r.creator].late++; s[r.creator].total++;}
   });
   state.creators.forEach(name=>{if(!s[name])s[name]={name,early:0,mid:0,late:0,total:0,kEarlyRecord:0,kMidRecord:0,kLateRecord:0,kEarly:0,kMid:0,kLate:0,kTotal:0,last:'',records:[]}});
   Object.values(s).forEach(x=>{x.last=allTimeLastDate(x.name)||x.last;x.kEarly=finalK(x.name,'上旬',x.kEarlyRecord);x.kMid=finalK(x.name,'中旬',x.kMidRecord);x.kLate=finalK(x.name,'下旬',x.kLateRecord);x.kTotal=x.kEarly+x.kMid+x.kLate;});
@@ -295,9 +352,9 @@ function setDeadline(name,value){if(!state.deadlines||typeof state.deadlines!=='
 function isFavorite(name){return Array.isArray(state.favorites)&&state.favorites.includes(name)}
 function toggleFavorite(name){if(!Array.isArray(state.favorites))state.favorites=[]; if(isFavorite(name)){state.favorites=state.favorites.filter(n=>n!==name);toast('お気に入りを外しました');}else{state.favorites.push(name);toast('お気に入りに追加しました');} persist(true); renderAll();}
 
-function renderAll(){renderSelect();renderHome();renderCreators();renderCalendar();renderBackup()}
+function renderAll(){applyTheme(themeColor);renderSelect();renderHome();renderCreators();renderCalendar();renderBackup()}
 function renderSelect(){const sel=document.getElementById('creatorSelect');const cur=sel.value;sel.innerHTML='<option value="">配信者を選択</option>'+state.creators.map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');sel.value=cur;document.getElementById('creatorChips').innerHTML=state.creators.slice(0,12).map(n=>`<button type="button" class="chip" onclick="document.getElementById('creatorSelect').value='${js(n)}'">${esc(n)}</button>`).join('')}
-function renderHome(){document.getElementById('statCreators').textContent=state.creators.length;document.getElementById('statRecords').textContent=monthRecords().length;const recent=state.records.slice().sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0)).slice(0,5);document.getElementById('recentList').innerHTML=recent.length?recent.map(r=>historyHtml(r,false,true)).join(''):'まだ記録がありません。'}
+function renderHome(){document.getElementById('statCreators').textContent=state.creators.length;document.getElementById('statRecords').textContent=monthRecords().length;const todayLikeTotal=state.records.filter(r=>r.date===today()).reduce((sum,r)=>sum+likeValue(r),0);const tl=document.getElementById('todayLikes');if(tl)tl.textContent=todayLikeTotal;const recent=state.records.slice().sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0)).slice(0,6);document.getElementById('recentList').innerHTML=recent.length?recent.map(r=>historyHtml(r,false,true)).join(''):'まだ記録がありません。'}
 function periodBox(name,p,value){return `<div class="period clickable" onclick="event.stopPropagation();openPeriodKPicker('${js(name)}','${p}')"><b>${fmtK(value)}</b><span>${p}</span></div>`}
 function renderCreators(){
   const visitedBtn=document.getElementById('visitedOnlyBtn'); if(visitedBtn)visitedBtn.classList.toggle('active',visitedOnly);
@@ -344,6 +401,33 @@ function changeMonth(diff){const [y,m]=currentMonth.split('-').map(Number);const
 function downloadBackup(){state.lastBackup=new Date().toISOString();persist(true);const data={app:'colorsing-wakumawari',version:3,exportedAt:new Date().toISOString(),state};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`wakumawari_backup_${today()}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);renderAll();toast('バックアップを作成しました')}
 function restoreBackup(ev){const file=ev.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);const s=data.state||data;if(!Array.isArray(s.records)||!Array.isArray(s.creators))throw new Error('形式が違います');if(!confirm('バックアップを復元します。現在のデータは上書きされます。よろしいですか？'))return;state=normalizeState({creators:s.creators||[],records:s.records||[],periodK:s.periodK||{},favorites:s.favorites||[],members:s.members||[],deadlines:s.deadlines||{},lastSaved:new Date().toISOString(),lastBackup:s.lastBackup||null});localStorage.setItem(KEY,JSON.stringify(state));renderAll();toast('復元しました')}catch(e){alert('復元できませんでした。JSONファイルを確認してください。')}ev.target.value=''};reader.readAsText(file)}
 function clearAllData(){if(!confirm('全データを削除します。バックアップがないと戻せません。'))return;if(!confirm('本当に削除しますか？'))return;state={creators:[],records:[],periodK:{},favorites:[],members:[],deadlines:{},lastSaved:null,lastBackup:null};localStorage.removeItem(KEY);resetForm();renderAll();toast('全データを削除しました')}
+
+const THEMES={
+  pink:{main:'#ff6fae',main2:'#ff9cc8',accent:'#7c4dff'},
+  blue:{main:'#4aa3ff',main2:'#8dccff',accent:'#2f6fff'},
+  green:{main:'#26b874',main2:'#7ee0ae',accent:'#1f9f64'},
+  purple:{main:'#9b6bff',main2:'#c3a6ff',accent:'#7c4dff'},
+  orange:{main:'#ff9a3c',main2:'#ffc078',accent:'#ff7a00'},
+  yellow:{main:'#f2c230',main2:'#ffe07a',accent:'#d6a700'},
+  red:{main:'#ff5b6e',main2:'#ff9aa7',accent:'#e73c4f'}
+};
+function applyTheme(name){
+  const t=THEMES[name]||THEMES.pink;
+  document.documentElement.style.setProperty('--main',t.main);
+  document.documentElement.style.setProperty('--main2',t.main2);
+  document.documentElement.style.setProperty('--accent',t.accent);
+  themeColor=name;
+  ['Pink','Blue','Green','Purple','Orange','Yellow','Red'].forEach(k=>{
+    const el=document.getElementById('theme'+k);
+    if(el)el.classList.toggle('active',name===k.toLowerCase());
+  });
+}
+function setTheme(name){
+  applyTheme(name);
+  localStorage.setItem(KEY+'_theme',name);
+  toast('テーマカラーを変更しました');
+}
+
 load();
 </script>
 </body>
