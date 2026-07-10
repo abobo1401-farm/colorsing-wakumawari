@@ -357,13 +357,7 @@ function toggleFavorite(name){if(!Array.isArray(state.favorites))state.favorites
 function renderAll(){applyTheme(themeColor);renderSelect();renderHome();renderCreators();renderCalendar();renderBackup()}
 
 function recentCreatorOrder(){
-  const seen=new Set();
-  const ordered=[];
-  state.records.slice().sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0)).forEach(r=>{
-    if(r.creator&&!seen.has(r.creator)){seen.add(r.creator);ordered.push(r.creator);}
-  });
-  state.creators.forEach(n=>{if(!seen.has(n))ordered.push(n);});
-  return ordered;
+  return state.creators.slice().sort((a,b)=>a.localeCompare(b,'ja'));
 }
 
 function renderSelect(){const sel=document.getElementById('creatorSelect');const cur=sel.value;sel.innerHTML='<option value="">配信者を選択</option>'+recentCreatorOrder().map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');sel.value=cur;document.getElementById('creatorChips').innerHTML=recentCreatorOrder().slice(0,12).map(n=>`<button type="button" class="chip" onclick="document.getElementById('creatorSelect').value='${js(n)}'">${esc(n)}</button>`).join('')}
