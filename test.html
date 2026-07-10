@@ -61,8 +61,8 @@ button.danger{background:#ff4f67}
 .memo{white-space:pre-wrap;line-height:1.5;margin-top:6px;color:#51434a}
 .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
 .dow{text-align:center;font-size:11px;color:var(--muted);font-weight:800}
-.day{min-height:56px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:5px;font-size:11px}
-.day .num{font-weight:900}.dot{display:inline-block;margin-top:3px;background:var(--main);color:#fff;border-radius:999px;padding:1px 5px;font-size:10px}.empty{opacity:.35}
+.day{height:72px;min-height:72px;box-sizing:border-box;overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:10px;padding:5px;font-size:11px}
+.day .num{font-weight:900}.dot{display:block;width:100%;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px;background:var(--main);color:#fff;border-radius:999px;padding:1px 5px;font-size:10px}.empty{opacity:.35}
 .bottom-tabs{position:fixed;bottom:0;left:0;right:0;z-index:10;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:8px 6px max(8px,env(safe-area-inset-bottom));}
 .tab{background:transparent;color:var(--muted);box-shadow:none;border-radius:12px;padding:7px 2px;font-size:11px}
 .tab.active{background:#fff0f7;color:var(--main)}.tab span{display:block;font-size:20px;line-height:1}
