@@ -62,7 +62,7 @@ button.danger{background:#ff4f67}
 .calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
 .dow{text-align:center;font-size:11px;color:var(--muted);font-weight:800}
 .day{height:72px;min-height:72px;box-sizing:border-box;overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:10px;padding:5px;font-size:11px}
-.day .num{font-weight:900}.dot{display:block;width:100%;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px;background:var(--main);color:#fff;border-radius:999px;padding:1px 5px;font-size:10px}.empty{opacity:.35}
+.day .num{font-weight:900}.dot{display:block;width:100%;min-width:0;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px;background:var(--main);color:#fff;border-radius:999px;padding:1px 2px;font-size:8px;line-height:14px;text-align:center}.empty{opacity:.35}
 .bottom-tabs{position:fixed;bottom:0;left:0;right:0;z-index:10;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:8px 6px max(8px,env(safe-area-inset-bottom));}
 .tab{background:transparent;color:var(--muted);box-shadow:none;border-radius:12px;padding:7px 2px;font-size:11px}
 .tab.active{background:#fff0f7;color:var(--main)}.tab span{display:block;font-size:20px;line-height:1}
@@ -154,14 +154,25 @@ button.danger{background:#ff4f67}
     </div>
   </div>
   <div class="card"><div class="calendar" id="eventCalendarGrid"></div></div>
-  <div class="card"><h2>イベント追加</h2>
+  <div class="card"><h2 id="eventFormTitle">イベント追加</h2>
     <label class="label">日付</label><input id="eventDateInput" type="date">
-    <label class="label">配信者</label><select id="eventCreatorSelect"><option value="">配信者を選択</option></select>
+    <label class="label">配信者</label><select id="eventCreatorSelect" onchange="applyRememberedEventColor()"><option value="">配信者を選択</option></select>
+    <label class="label">推しカラー</label>
+    <select id="eventColorInput">
+      <option value="#ff6fae">ピンク</option>
+      <option value="#ef5350">赤</option>
+      <option value="#fb8c00">オレンジ</option>
+      <option value="#f9a825">黄色</option>
+      <option value="#43a047">緑</option>
+      <option value="#1e88e5">青</option>
+      <option value="#8e24aa">紫</option>
+      <option value="#607d8b">グレー</option>
+    </select>
     <label class="label">イベント名</label><input id="eventTitleInput" placeholder="イベント名">
     <label class="label">時間</label><input id="eventTimeInput" type="time">
     <label class="label">メモ</label><textarea id="eventMemoInput" placeholder="補足があれば入力"></textarea>
     <div class="toolbar" style="margin-top:12px">
-      <button onclick="saveEvent()">予定を追加</button>
+      <button id="eventSaveButton" onclick="saveEvent()">予定を追加</button>
       <button class="gray" onclick="resetEventForm()">入力クリア</button>
     </div>
   </div>
@@ -201,8 +212,8 @@ button.danger{background:#ff4f67}
 <script>
 const KEY='colorsing_wakumawari_v1';
 const K_VALUES=[0,0.1,0.3,0.5,0.7,1,...Array.from({length:38},(_,i)=>i+2)];
-let state={creators:[],records:[],periodK:{},favorites:[],members:[],deadlines:{},events:[],lastSaved:null,lastBackup:null};
-let attend='', editId=null, currentMonth='', eventMonth='', creatorSort='name', visitedOnly=false, favoriteOnly=false, likeCount=0, themeColor='pink';
+let state={creators:[],records:[],periodK:{},favorites:[],members:[],deadlines:{},eventColors:{},events:[],lastSaved:null,lastBackup:null};
+let attend='', editId=null, eventEditId=null, currentMonth='', eventMonth='', creatorSort='name', visitedOnly=false, favoriteOnly=false, likeCount=0, themeColor='pink', modalContext=null;
 
 function pad(n){return String(n).padStart(2,'0')}
 function today(){const d=new Date();return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`}
@@ -254,7 +265,13 @@ function normalizeState(s) {
   ns.favorites = Array.isArray(ns.favorites) ? ns.favorites.map(String) : [];
   ns.members = Array.isArray(ns.members) ? ns.members.map(String) : [];
   ns.deadlines = ns.deadlines && typeof ns.deadlines==='object' ? ns.deadlines : {};
+  ns.eventColors = ns.eventColors && typeof ns.eventColors==='object' ? ns.eventColors : {};
   ns.events = Array.isArray(ns.events) ? ns.events : [];
+  const allowedEventColors=new Set(['#ff6fae','#ef5350','#fb8c00','#f9a825','#43a047','#1e88e5','#8e24aa','#607d8b']);
+  ns.events.forEach(e=>{if(!allowedEventColors.has(e.color))e.color='#ff6fae';});
+  Object.keys(ns.eventColors).forEach(name=>{if(!allowedEventColors.has(ns.eventColors[name]))delete ns.eventColors[name];});
+  [...ns.events].sort((a,b)=>new Date(a.createdAt||0)-new Date(b.createdAt||0)).forEach(e=>{if(e.creator&&allowedEventColors.has(e.color))ns.eventColors[String(e.creator)]=e.color;});
+  ns.events.forEach(e=>{if(e.creator)e.color=ns.eventColors[String(e.creator)]||'#ff6fae';});
   ns.lastSaved = ns.lastSaved || null;
   ns.lastBackup = ns.lastBackup || null;
   const names = new Set(ns.creators);
@@ -284,7 +301,7 @@ function showScreen(id){
   if(id==='add'&&!editId)document.getElementById('dateInput').value=today();
   renderAll();
 }
-function closeModal(){document.getElementById('detailModal').style.display='none'}
+function closeModal(){document.getElementById('detailModal').style.display='none';modalContext=null}
 function setAttend(v){
   attend=(v==='YES'||v==='♡1'||v==='♡2'||v==='♡3'||v==='♡4')?v:'';
   const y=document.getElementById('yesBtn');
@@ -374,30 +391,71 @@ function isFavorite(name){return Array.isArray(state.favorites)&&state.favorites
 function toggleFavorite(name){if(!Array.isArray(state.favorites))state.favorites=[]; if(isFavorite(name)){state.favorites=state.favorites.filter(n=>n!==name);toast('お気に入りを外しました');}else{state.favorites.push(name);toast('お気に入りに追加しました');} persist(true); renderAll();}
 
 
+
+function applyRememberedEventColor(){
+  const creator=document.getElementById('eventCreatorSelect')?.value||'';
+  const color=document.getElementById('eventColorInput');
+  if(color&&creator)color.value=eventColor(state.eventColors?.[creator]||'#ff6fae');
+}
+function rememberEventColor(creator,color){
+  if(!state.eventColors||typeof state.eventColors!=='object')state.eventColors={};
+  if(!creator)return;
+  const fixedColor=eventColor(color);
+  state.eventColors[creator]=fixedColor;
+  (state.events||[]).forEach(e=>{if(e.creator===creator)e.color=fixedColor;});
+}
+
 function resetEventForm(){
+  eventEditId=null;
   const d=document.getElementById('eventDateInput'); if(d)d.value=today();
   const c=document.getElementById('eventCreatorSelect'); if(c)c.value='';
+  const color=document.getElementById('eventColorInput'); if(color)color.value='#ff6fae';
   const t=document.getElementById('eventTitleInput'); if(t)t.value='';
   const tm=document.getElementById('eventTimeInput'); if(tm)tm.value='';
   const m=document.getElementById('eventMemoInput'); if(m)m.value='';
+  const h=document.getElementById('eventFormTitle'); if(h)h.textContent='イベント追加';
+  const b=document.getElementById('eventSaveButton'); if(b)b.textContent='予定を追加';
+}
+function editEvent(id){
+  const e=(state.events||[]).find(x=>x.id===id); if(!e)return;
+  eventEditId=id;
+  showScreen('calendar');
+  const d=document.getElementById('eventDateInput'); if(d)d.value=e.date||today();
+  const c=document.getElementById('eventCreatorSelect'); if(c)c.value=e.creator||'';
+  const color=document.getElementById('eventColorInput'); if(color)color.value=eventColor(state.eventColors?.[e.creator]||e.color||'#ff6fae');
+  const t=document.getElementById('eventTitleInput'); if(t)t.value=e.title||'';
+  const tm=document.getElementById('eventTimeInput'); if(tm)tm.value=e.time||'';
+  const m=document.getElementById('eventMemoInput'); if(m)m.value=e.memo||'';
+  const h=document.getElementById('eventFormTitle'); if(h)h.textContent='イベント編集';
+  const b=document.getElementById('eventSaveButton'); if(b)b.textContent='変更を保存';
+  closeModal();
+  h?.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function saveEvent(){
   const date=document.getElementById('eventDateInput')?.value||'';
   const creator=document.getElementById('eventCreatorSelect')?.value||'';
   const title=(document.getElementById('eventTitleInput')?.value||'').trim();
+  const color=document.getElementById('eventColorInput')?.value||'#ff6fae';
   const time=document.getElementById('eventTimeInput')?.value||'';
   const memo=(document.getElementById('eventMemoInput')?.value||'').trim();
   if(!date){alert('日付を選んでください');return}
   if(!creator){alert('配信者を選んでください');return}
   if(!title){alert('イベント名を入力してください');return}
-  state.events.push({
-    id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),
-    date,creator,title,time,memo,createdAt:new Date().toISOString()
-  });
+  rememberEventColor(creator,color);
+  if(eventEditId){
+    const e=(state.events||[]).find(x=>x.id===eventEditId);
+    if(e){Object.assign(e,{date,creator,title,time,memo,color,updatedAt:new Date().toISOString()});}
+  }else{
+    state.events.push({
+      id:Date.now().toString(36)+Math.random().toString(36).slice(2,7),
+      date,creator,title,time,memo,color,createdAt:new Date().toISOString()
+    });
+  }
+  const wasEditing=!!eventEditId;
   persist(true);
   resetEventForm();
   renderAll();
-  toast('イベントを追加しました');
+  toast(wasEditing?'イベントを更新しました':'イベントを追加しました');
 }
 function deleteEvent(id){
   if(!confirm('このイベントを削除しますか？'))return;
@@ -410,7 +468,7 @@ function eventHtml(e,buttons=false){
   return `<div class="event-item">
     <div><span class="event-time">${esc(e.time||'時間未設定')}</span><span class="event-title">${esc(e.creator)}｜${esc(e.title)}</span></div>
     ${e.memo?`<div class="small" style="margin-top:4px">${esc(e.memo)}</div>`:''}
-    ${buttons?`<div class="toolbar" style="margin-top:8px"><button class="gray" onclick="deleteEvent('${e.id}')">削除</button></div>`:''}
+    ${buttons?`<div class="toolbar" style="margin-top:8px"><button class="secondary" onclick="event.stopPropagation();editEvent('${e.id}')">編集</button><button class="gray" onclick="event.stopPropagation();deleteEvent('${e.id}')">削除</button></div>`:''}
   </div>`;
 }
 function setEventMonth(v){eventMonth=v||ym(today());renderAll()}
@@ -427,6 +485,14 @@ function openEventDate(date){
   document.getElementById('modalContent').innerHTML=`<div class="modal-title-row"><h2>${esc(date)} のイベント</h2><button class="modal-close" onclick="closeModal()">×</button></div>${items.map(e=>eventHtml(e,true)).join('')}`;
   document.getElementById('detailModal').style.display='flex';
 }
+function calendarCreatorLabel(name){
+  return String(name||'');
+}
+
+function eventColor(color){
+  const allowed=['#ff6fae','#ef5350','#fb8c00','#f9a825','#43a047','#1e88e5','#8e24aa','#607d8b'];
+  return allowed.includes(color)?color:'#ff6fae';
+}
 function renderEvents(){
   if(!eventMonth)eventMonth=ym(today());
   const monthInput=document.getElementById('eventMonthInput');if(monthInput)monthInput.value=eventMonth;
@@ -437,7 +503,7 @@ function renderEvents(){
   for(let d=1;d<=last.getDate();d++){
     const date=`${y}-${pad(m)}-${pad(d)}`;
     const items=(state.events||[]).filter(e=>e.date===date).sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));
-    html+=`<div class="day" onclick="openEventDate('${date}')"><div class="num">${d}</div>${items.slice(0,2).map(e=>`<div class="dot" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.creator)}</div>`).join('')}${items.length>2?`<div class="small">他${items.length-2}件</div>`:''}</div>`;
+    html+=`<div class="day" onclick="openEventDate('${date}')"><div class="num">${d}</div>${items.slice(0,2).map(e=>`<div class="dot" style="background:${eventColor(state.eventColors?.[e.creator]||e.color)}" title="${esc(e.creator)}">${esc(calendarCreatorLabel(e.creator))}</div>`).join('')}${items.length>2?`<div class="small">他${items.length-2}件</div>`:''}</div>`;
   }
   const grid=document.getElementById('eventCalendarGrid');if(grid)grid.innerHTML=html;
 
@@ -509,12 +575,22 @@ function updateRecordLikes(id,value){
   r.updatedAt=new Date().toISOString();
   persist(true);
   renderAll();
+  refreshOpenModal();
   toast('いいね数を更新しました');
+}
+function refreshOpenModal(){
+  const modal=document.getElementById('detailModal');
+  if(!modalContext||modal.style.display!=='flex')return;
+  const ctx={...modalContext};
+  if(ctx.type==='record')openRecordDetail(ctx.id);
+  else if(ctx.type==='creator')openDetail(ctx.name);
+  else if(ctx.type==='date')openDate(ctx.date);
 }
 
 function historyHtml(r,buttons,clickable=false){return `<div class="history-item ${isAttend(r)?'yes':'no'}" ${clickable?`onclick="openRecordDetail('${r.id}')" style="cursor:pointer"`:''}><div class="history-head"><span>${esc(r.date)} ${esc(r.creator)} ${isSongOshi(r.creator)?'<span class="badge song">歌推し♪</span>':''}${isMember(r.creator)?' <span class="badge member">メンシプ✨</span>':''}</span><span><span>${attendLabel(r)}</span><span style="display:block;margin-top:6px" onclick="event.stopPropagation()">${likeSelectHtml(r)}</span></span></div><div class="small">${period(r.date)}</div>${r.memo?`<div class="memo">${esc(r.memo)}</div>`:''}${buttons?`<div class="toolbar" style="margin-top:8px"><button class="secondary" onclick="event.stopPropagation();editRecord('${r.id}')">修正</button><button class="gray" onclick="event.stopPropagation();deleteRecord('${r.id}')">削除</button></div>`:''}</div>`}
-function openRecordDetail(id){const r=state.records.find(x=>x.id===id);if(!r)return;document.getElementById('modalContent').innerHTML=`<div class="modal-title-row"><h2>記録詳細</h2><button class="modal-close" onclick="closeModal()">×</button></div>${historyHtml(r,true)}`;document.getElementById('detailModal').style.display='flex'}
+function openRecordDetail(id){const r=state.records.find(x=>x.id===id);if(!r)return;modalContext={type:'record',id};document.getElementById('modalContent').innerHTML=`<div class="modal-title-row"><h2>記録詳細</h2><button class="modal-close" onclick="closeModal()">×</button></div>${historyHtml(r,true)}`;document.getElementById('detailModal').style.display='flex'}
 function openDetail(name){
+  modalContext={type:'creator',name};
   const sum=summaryByCreator().find(x=>x.name===name)||{name,early:0,mid:0,late:0,total:0,kEarly:0,kMid:0,kLate:0,kTotal:0,last:'',records:[]};
   const records=state.records.filter(r=>r.creator===name).slice().sort((a,b)=>new Date(b.updatedAt||b.createdAt||0)-new Date(a.updatedAt||a.createdAt||0));
   document.getElementById('modalContent').innerHTML=`<div class="modal-title-row"><h2>${esc(name)} ${isSongOshi(name)?'<span class="badge song">歌推し♪</span>':''}${isMember(name)?' <span class="badge member">メンシプ✨</span>':''}</h2><button class="modal-close" onclick="closeModal()">×</button></div><div class="periods">${periodBox(name,'上旬',sum.kEarly)}${periodBox(name,'中旬',sum.kMid)}${periodBox(name,'下旬',sum.kLate)}<div class="period"><b>${fmtK(sum.kTotal)}</b><span>合計</span></div></div><p class="hint" style="margin-top:8px">上旬・中旬・下旬の数字をタップするとk数を変更できます。</p><p class="small">出席：上${sum.early}回・中${sum.mid}回・下${sum.late}回　合計${sum.total}回${getDeadline(name)?'<br>締め：'+esc(fmtDeadline(getDeadline(name))):''}</p><div class="row" style="margin-top:6px"><select id="deadlineInput" class="deadline-select">${deadlineOptionsHtml(getDeadline(name))}</select><button class="secondary" style="font-size:12px;padding:8px 10px" onclick="setDeadline('${js(name)}',document.getElementById('deadlineInput').value)">締め保存</button></div><div class="mini-controls"><button class="mini-toggle ${isFavorite(name)?'active':''}" onclick="toggleFavorite('${js(name)}');openDetail('${js(name)}')">★ お気に入り</button><button class="mini-toggle member ${isMember(name)?'active':''}" onclick="toggleMember('${js(name)}');openDetail('${js(name)}')">✨ メンシプ</button></div><div class="toolbar" style="margin-top:10px"><button onclick="addRecordForCreator('${js(name)}')">この配信者で記録追加</button><button class="secondary" onclick="renameCreator('${js(name)}')">名前修正</button><button class="gray" onclick="deleteCreator('${js(name)}')">配信者削除</button></div><h2 style="margin-top:16px">履歴</h2>${records.length?records.map(r=>historyHtml(r,true)).join(''):'履歴はありません。'}`;
@@ -526,15 +602,15 @@ function openPeriodKPicker(name,p){
   document.getElementById('modalContent').innerHTML=`<div class="modal-title-row"><h2>${esc(name)}</h2><button class="modal-close" onclick="closeModal()">×</button></div><p class="hint">${p}の応援k数を選んでください。</p><label class="label">${p} k数</label><select id="periodKSelect">${kOptionsHtml(current)}</select><div class="toolbar" style="margin-top:12px"><button onclick="setCreatorPeriodK('${js(name)}','${p}',document.getElementById('periodKSelect').value)">保存</button><button class="gray" onclick="openDetail('${js(name)}')">戻る</button></div>`;
   document.getElementById('detailModal').style.display='flex';
 }
-function openDate(date){const rs=state.records.filter(r=>r.date===date);if(!rs.length){toast('この日の記録はありません');return}document.getElementById('modalContent').innerHTML=`<div class="modal-title-row"><h2>${esc(date)} の記録</h2><button class="modal-close" onclick="closeModal()">×</button></div>${rs.map(r=>historyHtml(r,true)).join('')}`;document.getElementById('detailModal').style.display='flex'}
+function openDate(date){const rs=state.records.filter(r=>r.date===date);if(!rs.length){toast('この日の記録はありません');return}modalContext={type:'date',date};document.getElementById('modalContent').innerHTML=`<div class="modal-title-row"><h2>${esc(date)} の記録</h2><button class="modal-close" onclick="closeModal()">×</button></div>${rs.map(r=>historyHtml(r,true)).join('')}`;document.getElementById('detailModal').style.display='flex'}
 function addRecordForCreator(name){resetForm();document.getElementById('dateInput').value=today();document.getElementById('creatorSelect').value=name;closeModal();showScreen('add')}
-function renameCreator(oldName){const newName=(prompt('新しい配信者名を入力してください',oldName)||'').trim();if(!newName||newName===oldName)return;if(state.creators.includes(newName)&&!confirm('同じ名前の配信者がいます。記録をまとめてもよろしいですか？'))return;state.records.forEach(r=>{if(r.creator===oldName)r.creator=newName});ensurePeriodK();Object.keys(state.periodK).forEach(m=>{if(state.periodK[m]?.[oldName]){state.periodK[m][newName]=state.periodK[m][oldName];delete state.periodK[m][oldName]}});state.creators=state.creators.filter(n=>n!==oldName);if(!state.creators.includes(newName))state.creators.push(newName);if(isFavorite(oldName)){state.favorites=state.favorites.filter(n=>n!==oldName);if(!state.favorites.includes(newName))state.favorites.push(newName);}if(isMember(oldName)){state.members=state.members.filter(n=>n!==oldName);if(!state.members.includes(newName))state.members.push(newName);}if(state.deadlines&&state.deadlines[oldName]){state.deadlines[newName]=state.deadlines[oldName];delete state.deadlines[oldName];}persist();openDetail(newName);toast('配信者名を修正しました')}
-function deleteCreator(name){const count=state.records.filter(r=>r.creator===name).length;if(!confirm(`配信者「${name}」を削除しますか？\n関連する記録 ${count}件も削除されます。`))return;if(count>0&&!confirm('本当に削除しますか？バックアップがないと戻せません。'))return;state.creators=state.creators.filter(n=>n!==name);state.records=state.records.filter(r=>r.creator!==name);state.favorites=(state.favorites||[]).filter(n=>n!==name);state.members=(state.members||[]).filter(n=>n!==name);if(state.deadlines)delete state.deadlines[name];ensurePeriodK();Object.keys(state.periodK).forEach(m=>{if(state.periodK[m])delete state.periodK[m][name]});persist();closeModal();toast('配信者を削除しました')}
+function renameCreator(oldName){const newName=(prompt('新しい配信者名を入力してください',oldName)||'').trim();if(!newName||newName===oldName)return;if(state.creators.includes(newName)&&!confirm('同じ名前の配信者がいます。記録をまとめてもよろしいですか？'))return;state.records.forEach(r=>{if(r.creator===oldName)r.creator=newName});ensurePeriodK();Object.keys(state.periodK).forEach(m=>{if(state.periodK[m]?.[oldName]){state.periodK[m][newName]=state.periodK[m][oldName];delete state.periodK[m][oldName]}});state.creators=state.creators.filter(n=>n!==oldName);if(!state.creators.includes(newName))state.creators.push(newName);if(isFavorite(oldName)){state.favorites=state.favorites.filter(n=>n!==oldName);if(!state.favorites.includes(newName))state.favorites.push(newName);}if(isMember(oldName)){state.members=state.members.filter(n=>n!==oldName);if(!state.members.includes(newName))state.members.push(newName);}if(state.deadlines&&state.deadlines[oldName]){state.deadlines[newName]=state.deadlines[oldName];delete state.deadlines[oldName];}if(state.eventColors&&state.eventColors[oldName]){state.eventColors[newName]=state.eventColors[oldName];delete state.eventColors[oldName];}state.events.forEach(e=>{if(e.creator===oldName)e.creator=newName;});persist();openDetail(newName);toast('配信者名を修正しました')}
+function deleteCreator(name){const count=state.records.filter(r=>r.creator===name).length;if(!confirm(`配信者「${name}」を削除しますか？\n関連する記録 ${count}件も削除されます。`))return;if(count>0&&!confirm('本当に削除しますか？バックアップがないと戻せません。'))return;state.creators=state.creators.filter(n=>n!==name);state.records=state.records.filter(r=>r.creator!==name);state.favorites=(state.favorites||[]).filter(n=>n!==name);state.members=(state.members||[]).filter(n=>n!==name);if(state.deadlines)delete state.deadlines[name];if(state.eventColors)delete state.eventColors[name];state.events=(state.events||[]).filter(e=>e.creator!==name);ensurePeriodK();Object.keys(state.periodK).forEach(m=>{if(state.periodK[m])delete state.periodK[m][name]});persist();closeModal();toast('配信者を削除しました')}
 function ensurePeriodK(){if(!state.periodK||typeof state.periodK!=='object')state.periodK={}}
 function changeMonth(diff){const [y,m]=currentMonth.split('-').map(Number);const d=new Date(y,m-1+diff,1);currentMonth=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;renderAll()}
 function downloadBackup(){state.lastBackup=new Date().toISOString();persist(true);const data={app:'colorsing-wakumawari',version:3,exportedAt:new Date().toISOString(),state};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`wakumawari_backup_${today()}.json`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(a.href);renderAll();toast('バックアップを作成しました')}
-function restoreBackup(ev){const file=ev.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);const s=data.state||data;if(!Array.isArray(s.records)||!Array.isArray(s.creators))throw new Error('形式が違います');if(!confirm('バックアップを復元します。現在のデータは上書きされます。よろしいですか？'))return;state=normalizeState({creators:s.creators||[],records:s.records||[],periodK:s.periodK||{},favorites:s.favorites||[],members:s.members||[],deadlines:s.deadlines||{},events:s.events||[],lastSaved:new Date().toISOString(),lastBackup:s.lastBackup||null});localStorage.setItem(KEY,JSON.stringify(state));renderAll();toast('復元しました')}catch(e){alert('復元できませんでした。JSONファイルを確認してください。')}ev.target.value=''};reader.readAsText(file)}
-function clearAllData(){if(!confirm('全データを削除します。バックアップがないと戻せません。'))return;if(!confirm('本当に削除しますか？'))return;state={creators:[],records:[],periodK:{},favorites:[],members:[],deadlines:{},events:[],lastSaved:null,lastBackup:null};localStorage.removeItem(KEY);resetForm();renderAll();toast('全データを削除しました')}
+function restoreBackup(ev){const file=ev.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=()=>{try{const data=JSON.parse(reader.result);const s=data.state||data;if(!Array.isArray(s.records)||!Array.isArray(s.creators))throw new Error('形式が違います');if(!confirm('バックアップを復元します。現在のデータは上書きされます。よろしいですか？'))return;state=normalizeState({creators:s.creators||[],records:s.records||[],periodK:s.periodK||{},favorites:s.favorites||[],members:s.members||[],deadlines:s.deadlines||{},eventColors:s.eventColors||{},events:s.events||[],lastSaved:new Date().toISOString(),lastBackup:s.lastBackup||null});localStorage.setItem(KEY,JSON.stringify(state));renderAll();toast('復元しました')}catch(e){alert('復元できませんでした。JSONファイルを確認してください。')}ev.target.value=''};reader.readAsText(file)}
+function clearAllData(){if(!confirm('全データを削除します。バックアップがないと戻せません。'))return;if(!confirm('本当に削除しますか？'))return;state={creators:[],records:[],periodK:{},favorites:[],members:[],deadlines:{},eventColors:{},events:[],lastSaved:null,lastBackup:null};localStorage.removeItem(KEY);resetForm();renderAll();toast('全データを削除しました')}
 
 const THEMES={
   pink:{main:'#ff6fae',main2:'#ff9cc8',accent:'#7c4dff'},
